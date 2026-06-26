@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 const exampleRoot = 'examples/universal-app';
 const packageJsonPath = `${exampleRoot}/package.json`;
 const appSourcePath = `${exampleRoot}/src/App.js`;
+const mnistSamplesPath = `${exampleRoot}/src/mnistSamples.js`;
 const viteConfigPath = `${exampleRoot}/vite.config.js`;
 const capacitorConfigPath = `${exampleRoot}/capacitor.config.json`;
 const workflowPath = '.github/workflows/example-app.yml';
@@ -47,14 +48,23 @@ describe('universal React example app', () => {
     expect(packageJson.scripts['mobile:ios:run']).toContain('cap run ios');
   });
 
-  it('renders a visual UI using the package add and multiply functions', () => {
+  it('renders the raster vectorization UI using package functions and MNIST data', () => {
     const appSource = readText(appSourcePath);
+    const sampleSource = readText(mnistSamplesPath);
 
     expect(appSource).toContain("from '../../../src/index.js'");
-    expect(appSource).toContain('add(parsedLeft, parsedRight)');
-    expect(appSource).toContain('multiply(parsedLeft, parsedRight)');
-    expect(appSource).toContain('Addition');
-    expect(appSource).toContain('Multiplication');
+    expect(appSource).toContain('vectorizeRasterLine(activeRaster');
+    expect(appSource).toContain("from './mnistSamples.js'");
+    expect(appSource).toContain(
+      'getImageData(0, 0, DRAWING_SIZE, DRAWING_SIZE)'
+    );
+    expect(appSource).toContain('onPointerDown');
+    expect(appSource).toContain('MNIST');
+    expect(appSource).toContain('SVG');
+
+    expect(sampleSource).toContain('MNIST_SAMPLE_COUNT = 50');
+    expect(sampleSource).toContain('MNIST_SAMPLE_LABELS');
+    expect(sampleSource).toContain('MNIST_SAMPLE_PIXELS_BASE64');
   });
 
   it('shares the Vite build output with Capacitor and GitHub Pages', () => {
@@ -99,6 +109,7 @@ describe('universal React example app', () => {
     expect(docs).toContain('npm run example:web:build');
     expect(docs).toContain('npm run example:desktop:package');
     expect(docs).toContain('npm run example:mobile:sync');
+    expect(docs).toContain('50 MNIST training samples');
     expect(docs).toContain('Apple Developer Program');
     expect(docs).toContain('Google Play Console');
   });

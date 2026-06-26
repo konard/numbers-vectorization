@@ -1,7 +1,7 @@
 {
   "name": "@link-foundation/example-package-name",
   "version": "0.11.12",
-  "description": "A JavaScript/TypeScript package template for AI-driven development",
+  "description": "CPU-only raster line vectorization for handwritten digit strokes",
   "type": "module",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -43,10 +43,11 @@
     "changeset:status": "changeset status --since=origin/main"
   },
   "keywords": [
-    "template",
-    "javascript",
-    "typescript",
-    "ai-driven"
+    "vectorization",
+    "raster",
+    "svg",
+    "mnist",
+    "handwriting"
   ],
   "author": "",
   "license": "Unlicense",
@@ -55,7 +56,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/link-foundation/js-ai-driven-development-pipeline-template.git"
+    "url": "git+https://github.com/konard/numbers-vectorization.git"
   },
   "engines": {
     "node": ">=20.0.0"

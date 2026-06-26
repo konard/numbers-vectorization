@@ -1,13 +1,27 @@
-# js-ai-driven-development-pipeline-template
+# numbers-vectorization
 
-A comprehensive template for AI-driven JavaScript/TypeScript development with full CI/CD pipeline support.
+A JavaScript package and browser demo for reconstructing a single handwritten
+raster stroke as an SVG centerline path.
 
-This repository publishes the real test package
-`@link-foundation/example-package-name` so the template release pipeline is
-validated end to end with npm trusted publishing.
+The first implementation targets MNIST-sized digit rasters and Apple
+Pencil-style browser input. It does not classify digits; it thresholds raster
+pixels, thins the foreground mask to a centerline, extracts the longest
+endpoint path, simplifies the path, and emits an SVG document with an estimated
+stroke width.
 
 ## Features
 
+- **Raster line vectorization**: Converts grayscale, binary, or RGBA raster
+  strokes into SVG paths using CPU-only JavaScript
+- **Centerline extraction**: Uses Zhang-Suen thinning plus graph endpoint path
+  reconstruction for single-stroke handwriting
+- **SVG output**: Returns path data, simplified points, masks, skeletons, stroke
+  width estimates, and standalone SVG markup
+- **MNIST demo data**: Ships 50 compact MNIST training samples in the GitHub
+  Pages example app
+- **Pencil input demo**: Rasterizes browser pointer input to canvas image data
+  before vectorizing it, so the demo exercises the raster algorithm rather than
+  pointer coordinates
 - **Multi-runtime support**: Works with Bun, Node.js, and Deno
 - **Universal testing**: Uses [test-anywhere](https://github.com/link-foundation/test-anywhere) for cross-runtime tests
 - **Automated releases**: Changesets-based versioning with GitHub Actions
@@ -19,43 +33,54 @@ validated end to end with npm trusted publishing.
 
 ## Quick Start
 
-### Using This Template
+### Library Usage
 
-1. Click "Use this template" on GitHub to create a new repository
-2. Clone your new repository
-3. Update `package.json` with your package name and description
-4. Install dependencies: `bun install`
-5. Start developing!
+```js
+import { vectorizeRasterLine } from '@link-foundation/example-package-name';
 
-### Development
+const raster = {
+  width: 5,
+  height: 5,
+  pixels: Uint8Array.from(
+    ['#....', '.#...', '..#..', '...#.', '....#'].join(''),
+    (value) => (value === '#' ? 255 : 0)
+  ),
+};
+
+const result = vectorizeRasterLine(raster);
+
+console.log(result.path);
+console.log(result.svg);
+```
+
+### Development Commands
 
 ```bash
 # Install dependencies
-bun install
+npm install
 
 # Run tests
-bun test --timeout 30000
-
-# Or with other runtimes:
 npm test
+
+# Or with other runtimes
+bun test --timeout 30000
 deno test --allow-read
 
 # Lint code
-bun run lint
+npm run lint
 
 # Format code
-bun run format
+npm run format
 
 # Check all (lint + format + file size)
-bun run check
+npm run check
 
-# Build the universal React example app
+# Build the React example app
 npm install --prefix examples/universal-app
 npm run example:web:build
-npm run example:desktop:package
 
-# Try the CLI locally
-node bin/example-package-name.js add 2 3
+# Regenerate the compact MNIST sample module
+node experiments/prepare-mnist-samples.mjs
 ```
 
 ## Project Structure
@@ -66,7 +91,7 @@ node bin/example-package-name.js add 2 3
 ├── .github/workflows/    # GitHub Actions CI/CD
 ├── .husky/               # Git hooks (pre-commit)
 ├── examples/             # Usage examples
-│   └── universal-app/    # React + GitHub Pages + Electron + Capacitor app
+│   └── universal-app/    # React vectorization demo for Pages/Electron/Capacitor
 ├── scripts/              # Build and release scripts
 ├── src/                  # Source code
 │   ├── index.js          # Main entry point
@@ -83,7 +108,7 @@ node bin/example-package-name.js add 2 3
 
 ### Multi-Runtime Support
 
-This template is designed to work seamlessly with all major JavaScript runtimes:
+This package is designed to work seamlessly with all major JavaScript runtimes:
 
 - **Bun**: Primary runtime with highest performance, uses native test support (`bun test`)
 - **Node.js**: Alternative runtime, uses built-in test runner (`node --test`)
@@ -101,21 +126,22 @@ While `package.json` is the source of truth for dependencies, the template suppo
 - **pnpm**: Uses `pnpm-lock.yaml`
 - **deno**: Uses `deno.json` for configuration
 
-Note: `package-lock.json` is not committed by default to allow any package manager.
+The committed `package-lock.json` keeps npm-based CI reproducible, while the
+source and tests remain runtime-agnostic.
 
 ### Universal App Example
 
-The template includes `examples/universal-app`, a Vite React app that imports
-`add` and `multiply` from `src/index.js` and renders a visual calculator UI.
+The repository includes `examples/universal-app`, a Vite React app that imports
+`vectorizeRasterLine` from `src/index.js` and renders a visual raster-to-SVG
+workspace.
 The same static build is used by:
 
 - GitHub Pages (`npm run example:web:build`)
 - Electron desktop packaging (`npm run example:desktop:package`)
 - Capacitor Android/iOS sync (`npm run example:mobile:sync`)
 
-The example app has its own `package.json` and lockfile so template users can
-opt into the frontend stack without adding React, Electron, or Capacitor to the
-library package itself.
+The example app has its own `package.json` and lockfile so the frontend stack
+does not add React, Electron, or Capacitor to the library package itself.
 
 See [examples/universal-app/README.md](examples/universal-app/README.md) for
 local web, desktop, Android, and iOS testing instructions.
