@@ -24,15 +24,18 @@
 //   mjs-changed, js-changed, package-changed, docs-changed,
 //   workflow-changed, any-code-changed
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { appendFileSync } from 'fs';
 
-function exec(command) {
+function git(args, { allowFailure = true } = {}) {
   try {
-    return execSync(command, { encoding: 'utf-8' }).trim();
+    return execFileSync('git', args, { encoding: 'utf-8' }).trim();
   } catch (error) {
-    console.error(`Error executing command: ${command}`);
+    console.error(`Error executing command: git ${args.join(' ')}`);
     console.error(error.message);
+    if (!allowFailure) {
+      throw error;
+    }
     return '';
   }
 }
@@ -46,7 +49,7 @@ function setOutput(name, value) {
 }
 
 function isMergeCommit() {
-  const parentCount = exec('git cat-file -p HEAD')
+  const parentCount = git(['cat-file', '-p', 'HEAD'])
     .split('\n')
     .filter((line) => line.startsWith('parent ')).length;
   return parentCount > 1;
@@ -69,13 +72,15 @@ function getChangedFiles() {
     console.log('Merge commit detected (pull_request event)');
     console.log('Comparing HEAD^2^ to HEAD^2 (per-commit diff of PR head)');
     try {
-      const output = exec('git diff --name-only HEAD^2^ HEAD^2');
+      const output = git(['diff', '--name-only', 'HEAD^2^', 'HEAD^2'], {
+        allowFailure: false,
+      });
       return output ? output.split('\n').filter(Boolean) : [];
     } catch {
       console.log(
         'HEAD^2^ not available (first commit in PR), listing files in HEAD^2'
       );
-      const output = exec('git diff --name-only HEAD^ HEAD^2');
+      const output = git(['diff', '--name-only', 'HEAD^', 'HEAD^2']);
       return output ? output.split('\n').filter(Boolean) : [];
     }
   }
@@ -83,17 +88,19 @@ function getChangedFiles() {
   if (mergeCommit) {
     console.log('Merge commit detected (push event)');
     console.log('Comparing HEAD^1 to HEAD (first-parent merge diff)');
-    const output = exec('git diff --name-only HEAD^1 HEAD');
+    const output = git(['diff', '--name-only', 'HEAD^1', 'HEAD']);
     return output ? output.split('\n').filter(Boolean) : [];
   }
 
   console.log('Comparing HEAD^ to HEAD');
   try {
-    const output = exec('git diff --name-only HEAD^ HEAD');
+    const output = git(['diff', '--name-only', 'HEAD^', 'HEAD'], {
+      allowFailure: false,
+    });
     return output ? output.split('\n').filter(Boolean) : [];
   } catch {
     console.log('HEAD^ not available, listing all files in HEAD');
-    const output = exec('git ls-tree --name-only -r HEAD');
+    const output = git(['ls-tree', '--name-only', '-r', 'HEAD']);
     return output ? output.split('\n').filter(Boolean) : [];
   }
 }
