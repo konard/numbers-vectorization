@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0
+
+### Minor Changes
+
+- Add CPU-only raster line vectorization with SVG output, MNIST demo samples, and
+  a browser drawing workspace.
+
+  Detect code changes from real merge commits pushed to main with the first-parent
+  merge diff while preserving pull request synthetic merge behavior.
+
 ## 0.11.12
 
 ### Patch Changes
