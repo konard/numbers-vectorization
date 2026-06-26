@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1
+
+### Patch Changes
+
+- 53b50b2: Fix CI preview screenshot readiness checks and suppress a Vite source HTML link-check false positive.
+
 ## 0.12.0
 
 ### Minor Changes
