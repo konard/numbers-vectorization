@@ -1,0 +1,1 @@
+konard/numbers-vectorization:scripts/update-preview-images.mjs: selector: '#calculator-title',

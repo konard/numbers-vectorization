@@ -1,0 +1,978 @@
+
+> @link-foundation/example-package-name@0.12.0 test
+> node --test --test-timeout=30000 tests/*.test.js
+
+TAP version 13
+# Subtest: check-changesets CLI
+    # Subtest: ignores stray Markdown files without valid changeset frontmatter
+    ok 1 - ignores stray Markdown files without valid changeset frontmatter
+      ---
+      duration_ms: 59.380524
+      ...
+    # Subtest: counts Markdown files with a recognized package bump in frontmatter
+    ok 2 - counts Markdown files with a recognized package bump in frontmatter
+      ---
+      duration_ms: 52.037887
+      ...
+    # Subtest: ignores changeset frontmatter for an unknown package
+    ok 3 - ignores changeset frontmatter for an unknown package
+      ---
+      duration_ms: 53.09829
+      ...
+    1..3
+ok 1 - check-changesets CLI
+  ---
+  duration_ms: 165.83449
+  type: 'suite'
+  ...
+# Subtest: check-file-line-limits.sh
+    # Subtest: defines a warning band below the hard limit
+    ok 1 - defines a warning band below the hard limit
+      ---
+      duration_ms: 1.114846
+      ...
+    # Subtest: warns without failing for files above the warning threshold
+    ok 2 - warns without failing for files above the warning threshold
+      ---
+      duration_ms: 22.475531
+      ...
+    # Subtest: still fails files over the hard limit
+    ok 3 - still fails files over the hard limit
+      ---
+      duration_ms: 16.648427
+      ...
+    # Subtest: fails .js and .cjs files over the hard limit
+    ok 4 - fails .js and .cjs files over the hard limit
+      ---
+      duration_ms: 19.442011
+      ...
+    # Subtest: fails Markdown files over the hard limit
+    ok 5 - fails Markdown files over the hard limit
+      ---
+      duration_ms: 18.822665
+      ...
+    # Subtest: exempts case-study generated-data files from the limit
+    ok 6 - exempts case-study generated-data files from the limit
+      ---
+      duration_ms: 11.738374
+      ...
+    # Subtest: normalizes padded wc output from BSD-like environments
+    ok 7 - normalizes padded wc output from BSD-like environments
+      ---
+      duration_ms: 18.685901
+      ...
+    1..7
+ok 2 - check-file-line-limits.sh
+  ---
+  duration_ms: 110.600719
+  type: 'suite'
+  ...
+# Subtest: CI timeout policy
+    # Subtest: sets timeout-minutes for every release workflow job
+    ok 1 - sets timeout-minutes for every release workflow job
+      ---
+      duration_ms: 2.600114
+      ...
+    # Subtest: sets timeout-minutes for every link workflow job
+    ok 2 - sets timeout-minutes for every link workflow job
+      ---
+      duration_ms: 1.397567
+      ...
+    # Subtest: parses workflow files checked out with Windows line endings
+    ok 3 - parses workflow files checked out with Windows line endings
+      ---
+      duration_ms: 0.227551
+      ...
+    # Subtest: caps individual Node.js and Bun tests at 30 seconds
+    ok 4 - caps individual Node.js and Bun tests at 30 seconds
+      ---
+      duration_ms: 0.16099
+      ...
+    1..4
+ok 3 - CI timeout policy
+  ---
+  duration_ms: 5.86511
+  type: 'suite'
+  ...
+# Subtest: create-github-release release note extraction
+    # Subtest: extracts notes for an exact version header instead of a prefix match
+    ok 1 - extracts notes for an exact version header instead of a prefix match
+      ---
+      duration_ms: 1.006524
+      ...
+    1..1
+ok 4 - create-github-release release note extraction
+  ---
+  duration_ms: 1.950363
+  type: 'suite'
+  ...
+# Subtest: create-github-release release title formatting
+    # Subtest: parses language from CLI arguments and environment defaults
+    ok 1 - parses language from CLI arguments and environment defaults
+      ---
+      duration_ms: 0.526366
+      ...
+    # Subtest: builds a human-readable release name from a multi-language tag
+    ok 2 - builds a human-readable release name from a multi-language tag
+      ---
+      duration_ms: 1.980158
+      ...
+    # Subtest: caps oversized release notes and links to the tagged changelog
+    ok 3 - caps oversized release notes and links to the tagged changelog
+      ---
+      duration_ms: 29.114307
+      ...
+    1..3
+ok 5 - create-github-release release title formatting
+  ---
+  duration_ms: 31.858926
+  type: 'suite'
+  ...
+# Subtest: create-github-release.mjs
+    # Subtest: uses gh api and reports successful creation only for exit code 0
+    ok 1 - uses gh api and reports successful creation only for exit code 0
+      ---
+      duration_ms: 0.608309
+      ...
+    # Subtest: throws when gh api exits non-zero with an unexpected error
+    ok 2 - throws when gh api exits non-zero with an unexpected error
+      ---
+      duration_ms: 0.273548
+      ...
+    # Subtest: treats already_exists as an idempotent gh api result
+    ok 3 - treats already_exists as an idempotent gh api result
+      ---
+      duration_ms: 0.181852
+      ...
+    # Subtest: passes release payload to gh api and reports success only on exit code 0
+    ok 4 - passes release payload to gh api and reports success only on exit code 0
+      ---
+      duration_ms: 104.721789
+      ...
+    # Subtest: auto-detects multi-language release tags and titles
+    ok 5 - auto-detects multi-language release tags and titles
+      ---
+      duration_ms: 93.711443
+      ...
+    # Subtest: fails when gh api exits non-zero with an unexpected error
+    ok 6 - fails when gh api exits non-zero with an unexpected error
+      ---
+      duration_ms: 98.438053
+      ...
+    # Subtest: treats already_exists as an explicit idempotent skip
+    ok 7 - treats already_exists as an explicit idempotent skip
+      ---
+      duration_ms: 109.465925
+      ...
+    1..7
+ok 6 - create-github-release.mjs
+  ---
+  duration_ms: 407.897139
+  type: 'suite'
+  ...
+# Subtest: detect-code-changes CLI
+    # Subtest: detects code introduced by a real merge commit pushed to main
+    ok 1 - detects code introduced by a real merge commit pushed to main
+      ---
+      duration_ms: 183.610572
+      ...
+    # Subtest: keeps pull request merge commits scoped to the PR head commit diff
+    ok 2 - keeps pull request merge commits scoped to the PR head commit diff
+      ---
+      duration_ms: 177.667465
+      ...
+    1..2
+ok 7 - detect-code-changes CLI
+  ---
+  duration_ms: 362.598067
+  type: 'suite'
+  ...
+# Subtest: optional Docker Hub publishing workflow
+    # Subtest: adds a Docker publish job downstream of npm release jobs
+    ok 1 - adds a Docker publish job downstream of npm release jobs
+      ---
+      duration_ms: 1.267763
+      ...
+    # Subtest: waits for the exact npm version before publishing Docker tags
+    ok 2 - waits for the exact npm version before publishing Docker tags
+      ---
+      duration_ms: 1.85472
+      ...
+    # Subtest: uses Docker official GitHub Actions with DOCKERHUB_TOKEN authentication
+    ok 3 - uses Docker official GitHub Actions with DOCKERHUB_TOKEN authentication
+      ---
+      duration_ms: 0.223944
+      ...
+    1..3
+ok 8 - optional Docker Hub publishing workflow
+  ---
+  duration_ms: 4.374744
+  type: 'suite'
+  ...
+# Subtest: Docker publish configuration
+    # Subtest: keeps Docker publishing disabled until DOCKERHUB_IMAGE is configured
+    ok 1 - keeps Docker publishing disabled until DOCKERHUB_IMAGE is configured
+      ---
+      duration_ms: 0.384954
+      ...
+    # Subtest: reports missing Docker Hub credentials when publishing is enabled
+    ok 2 - reports missing Docker Hub credentials when publishing is enabled
+      ---
+      duration_ms: 0.311916
+      ...
+    # Subtest: accepts complete Docker Hub configuration without exposing the token
+    ok 3 - accepts complete Docker Hub configuration without exposing the token
+      ---
+      duration_ms: 0.273168
+      ...
+    1..3
+ok 9 - Docker publish configuration
+  ---
+  duration_ms: 1.3322
+  type: 'suite'
+  ...
+# Subtest: wait-for-npm.mjs
+    # Subtest: parses release wait options
+    ok 1 - parses release wait options
+      ---
+      duration_ms: 0.402451
+      ...
+    # Subtest: retries until npm reports the requested version
+    ok 2 - retries until npm reports the requested version
+      ---
+      duration_ms: 0.342392
+      ...
+    1..2
+ok 10 - wait-for-npm.mjs
+  ---
+  duration_ms: 0.93086
+  type: 'suite'
+  ...
+# Subtest: add function
+    # Subtest: should add two positive numbers
+    ok 1 - should add two positive numbers
+      ---
+      duration_ms: 1.208185
+      ...
+    # Subtest: should add negative numbers
+    ok 2 - should add negative numbers
+      ---
+      duration_ms: 0.187751
+      ...
+    # Subtest: should add zero
+    ok 3 - should add zero
+      ---
+      duration_ms: 0.168752
+      ...
+    1..3
+ok 11 - add function
+  ---
+  duration_ms: 2.999811
+  type: 'suite'
+  ...
+# Subtest: multiply function
+    # Subtest: should multiply two positive numbers
+    ok 1 - should multiply two positive numbers
+      ---
+      duration_ms: 0.216022
+      ...
+    # Subtest: should multiply by zero
+    ok 2 - should multiply by zero
+      ---
+      duration_ms: 0.201802
+      ...
+    # Subtest: should multiply negative numbers
+    ok 3 - should multiply negative numbers
+      ---
+      duration_ms: 0.13388
+      ...
+    1..3
+ok 12 - multiply function
+  ---
+  duration_ms: 0.789579
+  type: 'suite'
+  ...
+# Subtest: merge-changesets.mjs
+    # Subtest: fails without merging when any changeset has an unparseable bump type
+    ok 1 - fails without merging when any changeset has an unparseable bump type
+      ---
+      duration_ms: 54.122951
+      ...
+    1..1
+ok 13 - merge-changesets.mjs
+  ---
+  duration_ms: 55.024007
+  type: 'suite'
+  ...
+# Subtest: package info helpers
+    # Subtest: reads scoped package names and versions from package.json content
+    ok 1 - reads scoped package names and versions from package.json content
+      ---
+      duration_ms: 1.098351
+      ...
+    # Subtest: formats npm package specifiers from the derived package name
+    ok 2 - formats npm package specifiers from the derived package name
+      ---
+      duration_ms: 0.231386
+      ...
+    # Subtest: formats changeset headers from the derived package name
+    ok 3 - formats changeset headers from the derived package name
+      ---
+      duration_ms: 0.12684
+      ...
+    # Subtest: matches changesets for the derived package name only
+    ok 4 - matches changesets for the derived package name only
+      ---
+      duration_ms: 0.435852
+      ...
+    # Subtest: does not match version type prefixes as valid changeset bumps
+    ok 5 - does not match version type prefixes as valid changeset bumps
+      ---
+      duration_ms: 0.30771
+      ...
+    # Subtest: reports missing package names clearly
+    ok 6 - reports missing package names clearly
+      ---
+      duration_ms: 0.164106
+      ...
+    1..6
+ok 14 - package info helpers
+  ---
+  duration_ms: 4.002288
+  type: 'suite'
+  ...
+# Subtest: publishable package metadata
+    # Subtest: uses the real link-foundation example package name
+    ok 1 - uses the real link-foundation example package name
+      ---
+      duration_ms: 0.998391
+      ...
+    # Subtest: defines a globally installable CLI command
+    ok 2 - defines a globally installable CLI command
+      ---
+      duration_ms: 0.343202
+      ...
+    # Subtest: runs package functions through the CLI command
+    ok 3 - runs package functions through the CLI command
+      ---
+      duration_ms: 0.378565
+      ...
+    # Subtest: runs when invoked through an npm-style bin symlink
+    ok 4 - runs when invoked through an npm-style bin symlink
+      ---
+      duration_ms: 51.808994
+      ...
+    # Subtest: publishes only the package runtime surface
+    ok 5 - publishes only the package runtime surface
+      ---
+      duration_ms: 0.161321
+      ...
+    1..5
+ok 15 - publishable package metadata
+  ---
+  duration_ms: 55.047212
+  type: 'suite'
+  ...
+# Subtest: publish failure classifier
+    # Subtest: classifies a first-publish E404 as non-retryable
+    ok 1 - classifies a first-publish E404 as non-retryable
+      ---
+      duration_ms: 1.134215
+      ...
+    # Subtest: classifies authentication failures (401/403/auth) as non-retryable
+    ok 2 - classifies authentication failures (401/403/auth) as non-retryable
+      ---
+      duration_ms: 0.477193
+      ...
+    # Subtest: is case-insensitive when matching patterns
+    ok 3 - is case-insensitive when matching patterns
+      ---
+      duration_ms: 0.169863
+      ...
+    # Subtest: treats transient/unknown failures as retryable
+    ok 4 - treats transient/unknown failures as retryable
+      ---
+      duration_ms: 0.12768
+      ...
+    # Subtest: handles null/undefined input without throwing
+    ok 5 - handles null/undefined input without throwing
+      ---
+      duration_ms: 0.103505
+      ...
+    # Subtest: exposes the documented non-retryable patterns
+    ok 6 - exposes the documented non-retryable patterns
+      ---
+      duration_ms: 0.285046
+      ...
+    # Subtest: builds actionable guidance naming the package and the bootstrap token
+    ok 7 - builds actionable guidance naming the package and the bootstrap token
+      ---
+      duration_ms: 0.155222
+      ...
+    1..7
+ok 16 - publish failure classifier
+  ---
+  duration_ms: 3.74952
+  type: 'suite'
+  ...
+# Subtest: release badge version normalization
+    # Subtest: strips a plain v prefix for backward compatibility
+    ok 1 - strips a plain v prefix for backward compatibility
+      ---
+      duration_ms: 1.327443
+      ...
+    # Subtest: strips a js-v prefix from multi-language release tags
+    ok 2 - strips a js-v prefix from multi-language release tags
+      ---
+      duration_ms: 0.242341
+      ...
+    # Subtest: strips a js_v prefix from auto-detected multi-language release tags
+    ok 3 - strips a js_v prefix from auto-detected multi-language release tags
+      ---
+      duration_ms: 0.121932
+      ...
+    # Subtest: strips a rust-v prefix from multi-language release tags
+    ok 4 - strips a rust-v prefix from multi-language release tags
+      ---
+      duration_ms: 0.110705
+      ...
+    # Subtest: strips a rust_v prefix from multi-language release tags
+    ok 5 - strips a rust_v prefix from multi-language release tags
+      ---
+      duration_ms: 0.104886
+      ...
+    # Subtest: escapes hyphens in prerelease versions for shields.io static badge paths
+    ok 6 - escapes hyphens in prerelease versions for shields.io static badge paths
+      ---
+      duration_ms: 0.165888
+      ...
+    # Subtest: builds a valid shields.io badge URL for prefixed tags
+    ok 7 - builds a valid shields.io badge URL for prefixed tags
+      ---
+      duration_ms: 0.219186
+      ...
+    # Subtest: builds a valid shields.io badge URL for prefixed prerelease tags
+    ok 8 - builds a valid shields.io badge URL for prefixed prerelease tags
+      ---
+      duration_ms: 0.141231
+      ...
+    1..8
+ok 17 - release badge version normalization
+  ---
+  duration_ms: 3.916881
+  type: 'suite'
+  ...
+# Subtest: release naming layout detection
+    # Subtest: treats js/package.json layouts as multi-language
+    ok 1 - treats js/package.json layouts as multi-language
+      ---
+      duration_ms: 0.884411
+      ...
+    # Subtest: treats root package.json layouts as single-language
+    ok 2 - treats root package.json layouts as single-language
+      ---
+      duration_ms: 0.213618
+      ...
+    1..2
+ok 18 - release naming layout detection
+  ---
+  duration_ms: 2.086658
+  type: 'suite'
+  ...
+# Subtest: release naming tag prefixes
+    # Subtest: uses js_v for auto-detected multi-language releases
+    ok 1 - uses js_v for auto-detected multi-language releases
+      ---
+      duration_ms: 0.28836
+      ...
+    # Subtest: uses v for auto-detected single-language releases
+    ok 2 - uses v for auto-detected single-language releases
+      ---
+      duration_ms: 0.145547
+      ...
+    # Subtest: keeps an explicit tag prefix override
+    ok 3 - keeps an explicit tag prefix override
+      ---
+      duration_ms: 0.15384
+      ...
+    1..3
+ok 19 - release naming tag prefixes
+  ---
+  duration_ms: 0.757151
+  type: 'suite'
+  ...
+# Subtest: release naming tag construction
+    # Subtest: builds js_v tags in multi-language mode
+    ok 1 - builds js_v tags in multi-language mode
+      ---
+      duration_ms: 0.614247
+      ...
+    # Subtest: builds plain v tags in single-language mode
+    ok 2 - builds plain v tags in single-language mode
+      ---
+      duration_ms: 1.501943
+      ...
+    # Subtest: does not double-prefix an already namespaced multi-language version
+    ok 3 - does not double-prefix an already namespaced multi-language version
+      ---
+      duration_ms: 0.265668
+      ...
+    # Subtest: does not double-prefix an already tagged single-language version
+    ok 4 - does not double-prefix an already tagged single-language version
+      ---
+      duration_ms: 0.1937
+      ...
+    # Subtest: supports explicit legacy dash prefixes
+    ok 5 - supports explicit legacy dash prefixes
+      ---
+      duration_ms: 0.128992
+      ...
+    # Subtest: works with prerelease and build metadata versions
+    ok 6 - works with prerelease and build metadata versions
+      ---
+      duration_ms: 0.164175
+      ...
+    1..6
+ok 20 - release naming tag construction
+  ---
+  duration_ms: 3.274792
+  type: 'suite'
+  ...
+# Subtest: release naming title construction
+    # Subtest: prefixes the language in multi-language mode
+    ok 1 - prefixes the language in multi-language mode
+      ---
+      duration_ms: 0.258015
+      ...
+    # Subtest: uses package name and version in single-language mode
+    ok 2 - uses package name and version in single-language mode
+      ---
+      duration_ms: 0.114771
+      ...
+    # Subtest: normalizes prefixed versions before building multi-language titles
+    ok 3 - normalizes prefixed versions before building multi-language titles
+      ---
+      duration_ms: 0.078667
+      ...
+    # Subtest: normalizes prefixed versions before building single-language titles
+    ok 4 - normalizes prefixed versions before building single-language titles
+      ---
+      duration_ms: 0.081662
+      ...
+    # Subtest: falls back to JavaScript when a single-language package name is unavailable
+    ok 5 - falls back to JavaScript when a single-language package name is unavailable
+      ---
+      duration_ms: 0.144826
+      ...
+    1..5
+ok 21 - release naming title construction
+  ---
+  duration_ms: 0.875017
+  type: 'suite'
+  ...
+# Subtest: release naming version normalization
+    # Subtest: normalizes "1.2.3" to "1.2.3"
+    ok 1 - normalizes "1.2.3" to "1.2.3"
+      ---
+      duration_ms: 0.206358
+      ...
+    # Subtest: normalizes "v1.2.3" to "1.2.3"
+    ok 2 - normalizes "v1.2.3" to "1.2.3"
+      ---
+      duration_ms: 0.171206
+      ...
+    # Subtest: normalizes "V1.2.3" to "1.2.3"
+    ok 3 - normalizes "V1.2.3" to "1.2.3"
+      ---
+      duration_ms: 0.072809
+      ...
+    # Subtest: normalizes "js_v1.2.3" to "1.2.3"
+    ok 4 - normalizes "js_v1.2.3" to "1.2.3"
+      ---
+      duration_ms: 0.057216
+      ...
+    # Subtest: normalizes "js-v1.2.3" to "1.2.3"
+    ok 5 - normalizes "js-v1.2.3" to "1.2.3"
+      ---
+      duration_ms: 0.040511
+      ...
+    # Subtest: normalizes "rust_v0.3.4" to "0.3.4"
+    ok 6 - normalizes "rust_v0.3.4" to "0.3.4"
+      ---
+      duration_ms: 0.032818
+      ...
+    # Subtest: normalizes "rust-v0.3.4" to "0.3.4"
+    ok 7 - normalizes "rust-v0.3.4" to "0.3.4"
+      ---
+      duration_ms: 0.027671
+      ...
+    # Subtest: normalizes "csharp_v2.0.0" to "2.0.0"
+    ok 8 - normalizes "csharp_v2.0.0" to "2.0.0"
+      ---
+      duration_ms: 0.02617
+      ...
+    # Subtest: normalizes "js_v1.2.3-beta.1" to "1.2.3-beta.1"
+    ok 9 - normalizes "js_v1.2.3-beta.1" to "1.2.3-beta.1"
+      ---
+      duration_ms: 0.074501
+      ...
+    # Subtest: normalizes "js_v1.2.3+build.5" to "1.2.3+build.5"
+    ok 10 - normalizes "js_v1.2.3+build.5" to "1.2.3+build.5"
+      ---
+      duration_ms: 0.052338
+      ...
+    # Subtest: normalizes "" to ""
+    ok 11 - normalizes "" to ""
+      ---
+      duration_ms: 0.081131
+      ...
+    1..11
+ok 22 - release naming version normalization
+  ---
+  duration_ms: 1.049267
+  type: 'suite'
+  ...
+# Error response from daemon: Get "https://registry-1.docker.io/v2/": timeout
+# Error response from daemon: Get "https://registry-1.docker.io/v2/": timeout
+# Error response from daemon: Get "https://registry-1.docker.io/v2/": timeout
+# Error response from daemon: Get "https://registry-1.docker.io/v2/": timeout
+# Error response from daemon: Get "https://mirror.gcr.io/v2/": timeout
+# Error response from daemon: Get "https://mirror.gcr.io/v2/": timeout
+# Subtest: setup-buildx-resilient pre-pull script
+    # Subtest: caches the canonical image and never touches the mirror when Docker Hub is healthy
+    ok 1 - caches the canonical image and never touches the mirror when Docker Hub is healthy
+      ---
+      duration_ms: 31.369555
+      ...
+    # Subtest: recovers via the mirror and re-tags to canonical when Docker Hub is down (issue \#75)
+    ok 2 - recovers via the mirror and re-tags to canonical when Docker Hub is down (issue \#75)
+      ---
+      duration_ms: 1045.757093
+      ...
+    # Subtest: falls through non-fatally when both the registry and the mirror are down
+    ok 3 - falls through non-fatally when both the registry and the mirror are down
+      ---
+      duration_ms: 2042.041851
+      ...
+    1..3
+ok 23 - setup-buildx-resilient pre-pull script
+  ---
+  duration_ms: 3121.028618
+  type: 'suite'
+  ...
+# Subtest: setup-buildx-resilient action.yml
+    # Subtest: declares the mirror fallback and pins the boot driver image
+    ok 1 - declares the mirror fallback and pins the boot driver image
+      ---
+      duration_ms: 0.252417
+      ...
+    # Subtest: supports verbose tracing and honours RUNNER_DEBUG
+    ok 2 - supports verbose tracing and honours RUNNER_DEBUG
+      ---
+      duration_ms: 0.259048
+      ...
+    1..2
+ok 24 - setup-buildx-resilient action.yml
+  ---
+  duration_ms: 0.714657
+  type: 'suite'
+  ...
+# Subtest: setup-npm version requirements
+    # Subtest: compares semantic versions numerically
+    ok 1 - compares semantic versions numerically
+      ---
+      duration_ms: 1.118261
+      ...
+    # Subtest: requires npm 11.5.1 or later
+    ok 2 - requires npm 11.5.1 or later
+      ---
+      duration_ms: 0.271154
+      ...
+    # Subtest: requires Node.js 22.14.0 or later
+    ok 3 - requires Node.js 22.14.0 or later
+      ---
+      duration_ms: 0.669099
+      ...
+    # Subtest: selects the latest npm 11 tarball that satisfies trusted publishing
+    ok 4 - selects the latest npm 11 tarball that satisfies trusted publishing
+      ---
+      duration_ms: 0.681377
+      ...
+    1..4
+ok 25 - setup-npm version requirements
+  ---
+  duration_ms: 3.992033
+  type: 'suite'
+  ...
+# Subtest: smoke-test-package.mjs
+    # Subtest: parses package smoke test options
+    ok 1 - parses package smoke test options
+      ---
+      duration_ms: 1.744826
+      ...
+    # Subtest: accepts JSON arrays for command arguments
+    ok 2 - accepts JSON arrays for command arguments
+      ---
+      duration_ms: 0.204306
+      ...
+    # Subtest: requires values for non-boolean options
+    ok 3 - requires values for non-boolean options
+      ---
+      duration_ms: 0.238856
+      ...
+    # Subtest: treats empty environment options as unset
+    ok 4 - treats empty environment options as unset
+      ---
+      duration_ms: 0.172047
+      ...
+    # Subtest: derives advertised npm bin entries
+    ok 5 - derives advertised npm bin entries
+      ---
+      duration_ms: 0.236052
+      ...
+    # Subtest: detects whether the installed package has a library entry point
+    ok 6 - detects whether the installed package has a library entry point
+      ---
+      duration_ms: 1.527822
+      ...
+    # Subtest: builds a safe library import probe for scoped packages
+    ok 7 - builds a safe library import probe for scoped packages
+      ---
+      duration_ms: 0.266087
+      ...
+    1..7
+ok 26 - smoke-test-package.mjs
+  ---
+  duration_ms: 5.779512
+  type: 'suite'
+  ...
+# Subtest: smoke-test-package entry point checks
+    # Subtest: resolves npm-installed bin shims for each platform
+    ok 1 - resolves npm-installed bin shims for each platform
+      ---
+      duration_ms: 0.385034
+      ...
+    # Subtest: retries npm installs to absorb registry propagation lag
+    ok 2 - retries npm installs to absorb registry propagation lag
+      ---
+      duration_ms: 0.432316
+      ...
+    # Subtest: captures CLI output before previewing it
+    ok 3 - captures CLI output before previewing it
+      ---
+      duration_ms: 0.432856
+      ...
+    # Subtest: previews captured output without using a live process pipe
+    ok 4 - previews captured output without using a live process pipe
+      ---
+      duration_ms: 0.163815
+      ...
+    1..4
+ok 27 - smoke-test-package entry point checks
+  ---
+  duration_ms: 1.699229
+  type: 'suite'
+  ...
+# Subtest: tag prefix logic
+    # Subtest: defaults to "v" prefix (backward compatible)
+    ok 1 - defaults to "v" prefix (backward compatible)
+      ---
+      duration_ms: 2.77189
+      ...
+    # Subtest: auto-detects "js_v" prefix for multi-language repos
+    ok 2 - auto-detects "js_v" prefix for multi-language repos
+      ---
+      duration_ms: 0.392557
+      ...
+    # Subtest: keeps explicit "js-v" prefix overrides for compatibility
+    ok 3 - keeps explicit "js-v" prefix overrides for compatibility
+      ---
+      duration_ms: 0.201101
+      ...
+    # Subtest: supports "rust-v" prefix
+    ok 4 - supports "rust-v" prefix
+      ---
+      duration_ms: 0.144516
+      ...
+    # Subtest: supports empty prefix
+    ok 5 - supports empty prefix
+      ---
+      duration_ms: 0.182963
+      ...
+    # Subtest: works with pre-release versions
+    ok 6 - works with pre-release versions
+      ---
+      duration_ms: 0.124976
+      ...
+    1..6
+ok 28 - tag prefix logic
+  ---
+  duration_ms: 5.3557
+  type: 'suite'
+  ...
+# Subtest: universal React example app
+    # Subtest: defines the expected app package and build targets
+    ok 1 - defines the expected app package and build targets
+      ---
+      duration_ms: 1.913299
+      ...
+    # Subtest: renders the raster vectorization UI using package functions and MNIST data
+    ok 2 - renders the raster vectorization UI using package functions and MNIST data
+      ---
+      duration_ms: 0.719895
+      ...
+    # Subtest: shares the Vite build output with Capacitor and GitHub Pages
+    ok 3 - shares the Vite build output with Capacitor and GitHub Pages
+      ---
+      duration_ms: 0.201632
+      ...
+    # Subtest: adds root scripts and a workflow for web, desktop, and mobile checks
+    ok 4 - adds root scripts and a workflow for web, desktop, and mobile checks
+      ---
+      duration_ms: 0.227179
+      ...
+    # Subtest: documents local validation without store credentials
+    ok 5 - documents local validation without store credentials
+      ---
+      duration_ms: 0.191196
+      ...
+    # Subtest: regenerates preview screenshots with browser-commander on every push to main
+    ok 6 - regenerates preview screenshots with browser-commander on every push to main
+      ---
+      duration_ms: 0.662759
+      ...
+    1..6
+ok 29 - universal React example app
+  ---
+  duration_ms: 7.020587
+  type: 'suite'
+  ...
+# Subtest: single raster line vectorization
+    # Subtest: extracts a centerline path from a thick diagonal raster stroke
+    ok 1 - extracts a centerline path from a thick diagonal raster stroke
+      ---
+      duration_ms: 2.568256
+      ...
+    # Subtest: preserves the corner of a one-stroke right-angle raster
+    ok 2 - preserves the corner of a one-stroke right-angle raster
+      ---
+      duration_ms: 0.485345
+      ...
+    # Subtest: accepts RGBA image data and ignores low-alpha pixels
+    ok 3 - accepts RGBA image data and ignores low-alpha pixels
+      ---
+      duration_ms: 0.379155
+      ...
+    # Subtest: supports dark foreground pixels in one-channel rasters
+    ok 4 - supports dark foreground pixels in one-channel rasters
+      ---
+      duration_ms: 0.397053
+      ...
+    # Subtest: returns an empty SVG path for a blank raster
+    ok 5 - returns an empty SVG path for a blank raster
+      ---
+      duration_ms: 1.203758
+      ...
+    # Subtest: creates a standalone SVG document for vectorization output
+    ok 6 - creates a standalone SVG document for vectorization output
+      ---
+      duration_ms: 0.315722
+      ...
+    1..6
+ok 30 - single raster line vectorization
+  ---
+  duration_ms: 6.536684
+  type: 'suite'
+  ...
+# Subtest: workflow reliability policy
+    # Subtest: cancels superseded non-main runs without cancelling main runs
+    ok 1 - cancels superseded non-main runs without cancelling main runs
+      ---
+      duration_ms: 1.007395
+      ...
+    # Subtest: uploads preview regeneration artifacts when screenshot rendering fails
+    ok 2 - uploads preview regeneration artifacts when screenshot rendering fails
+      ---
+      duration_ms: 0.426967
+      ...
+    # Subtest: uses the official Playwright image for preview regeneration instead of downloading Chromium
+    ok 3 - uses the official Playwright image for preview regeneration instead of downloading Chromium
+      ---
+      duration_ms: 0.332236
+      ...
+    # Subtest: verifies desktop package output before uploading artifacts
+    ok 4 - verifies desktop package output before uploading artifacts
+      ---
+      duration_ms: 0.291415
+      ...
+    # Subtest: excludes Vite source HTML from raw lychee link checks
+    ok 5 - excludes Vite source HTML from raw lychee link checks
+      ---
+      duration_ms: 1.034255
+      ...
+    1..5
+ok 31 - workflow reliability policy
+  ---
+  duration_ms: 4.027025
+  type: 'suite'
+  ...
+# Subtest: release workflow change gates
+    # Subtest: skips the slow test matrix for pull requests with no code changes
+    ok 1 - skips the slow test matrix for pull requests with no code changes
+      ---
+      duration_ms: 0.588419
+      ...
+    # Subtest: runs the slow test matrix for workflow changes after fast checks pass
+    ok 2 - runs the slow test matrix for workflow changes after fast checks pass
+      ---
+      duration_ms: 0.40907
+      ...
+    1..2
+ok 32 - release workflow change gates
+  ---
+  duration_ms: 1.273872
+  type: 'suite'
+  ...
+# Subtest: npm publish token bootstrap (issue \#77)
+    # Subtest: passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the release publish step
+    ok 1 - passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the release publish step
+      ---
+      duration_ms: 0.467278
+      ...
+    # Subtest: passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the instant-release publish step
+    ok 2 - passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the instant-release publish step
+      ---
+      duration_ms: 0.202533
+      ...
+    1..2
+ok 33 - npm publish token bootstrap (issue \#77)
+  ---
+  duration_ms: 0.855788
+  type: 'suite'
+  ...
+# Subtest: install-from-package smoke test (issue \#81)
+    # Subtest: smoke-tests the published npm package in the release job
+    ok 1 - smoke-tests the published npm package in the release job
+      ---
+      duration_ms: 0.531734
+      ...
+    # Subtest: smoke-tests the published npm package in the instant-release job
+    ok 2 - smoke-tests the published npm package in the instant-release job
+      ---
+      duration_ms: 0.156554
+      ...
+    1..2
+ok 34 - install-from-package smoke test (issue \#81)
+  ---
+  duration_ms: 0.790411
+  type: 'suite'
+  ...
+1..34
+# tests 144
+# suites 34
+# pass 144
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3598.746995

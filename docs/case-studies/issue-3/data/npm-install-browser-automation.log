@@ -1,0 +1,7 @@
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'commander@15.0.0',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '11.17.0' }
+npm warn EBADENGINE }
+
+added 24 packages, removed 14 packages, and changed 78 packages in 12s

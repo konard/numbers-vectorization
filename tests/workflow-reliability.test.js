@@ -186,6 +186,14 @@ describe('workflow reliability policy', () => {
     );
     expect(desktopPackageJob).toContain('if-no-files-found: error');
   });
+
+  it('excludes Vite source HTML from raw lychee link checks', () => {
+    const linksWorkflow = readWorkflow('.github/workflows/links.yml');
+
+    expect(linksWorkflow).toContain(
+      '--exclude-path examples/universal-app/index.html'
+    );
+  });
 });
 
 describe('release workflow change gates', () => {

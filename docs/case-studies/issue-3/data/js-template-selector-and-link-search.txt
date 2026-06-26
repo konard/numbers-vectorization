@@ -1,0 +1,5 @@
+docs/case-studies/issue-3/data/templates/js/scripts/update-preview-images.mjs:258:      selector: '#calculator-title',
+docs/case-studies/issue-3/data/templates/js/examples/universal-app/index.html:10:    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+docs/case-studies/issue-3/data/templates/js/examples/universal-app/index.html:15:    <script type="module" src="/src/main.js"></script>
+docs/case-studies/issue-3/data/templates/js/examples/universal-app/src/App.js:75:      { className: 'workspace', 'aria-labelledby': 'calculator-title' },
+docs/case-studies/issue-3/data/templates/js/examples/universal-app/src/App.js:80:        h('h1', { id: 'calculator-title' }, 'Universal Example App'),

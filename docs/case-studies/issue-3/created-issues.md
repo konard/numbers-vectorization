@@ -1,32 +1,20 @@
-# Created Issues in Affected Repositories
+# Created Issues
 
-As requested in the issue comment, we identified all repositories with the same bug and created issues in them.
+The investigation found one template-level issue to report.
 
-## Issues Created
+## Created
 
-1. **link-foundation/test-anywhere**
-   - Issue: (creation failed - may already exist or repo may have issues disabled)
-   - Script path: scripts/format-release-notes.mjs
+- JavaScript pipeline template:
+  https://github.com/link-foundation/js-ai-driven-development-pipeline-template/issues/95
 
-2. **link-foundation/gh-download-pull-request**
-   - Issue: https://github.com/link-foundation/gh-download-pull-request/issues/5
-   - Script path: scripts/format-release-notes.mjs
+## Not Created
 
-3. **link-foundation/gh-download-issue**
-   - Issue: https://github.com/link-foundation/gh-download-issue/issues/5
-   - Script path: scripts/format-release-notes.mjs
+- Rust pipeline template: no matching Vite example-app link-check surface found.
+- Python pipeline template: no matching Vite example-app link-check surface
+  found.
+- C# pipeline template: no matching Vite example-app link-check surface found.
 
-4. **link-foundation/js-ai-driven-development-pipeline-template** (this repository)
-   - Issue: https://github.com/link-foundation/js-ai-driven-development-pipeline-template/issues/3
-   - Script path: scripts/format-release-notes.mjs
-
-## Issue Summary
-
-All issues describe:
-
-- The bug (script only handles Patch changes)
-- Current behavior (section headers remain, PR detection fails)
-- Expected behavior (clean formatting with PR links)
-- Root cause (hardcoded regex pattern)
-- Proposed solution (flexible pattern matching)
-- Reference to upstream fix (link-assistant/agent#59)
+The preview screenshot selector failure was not reported to the JavaScript
+template because that template's current app still defines `#calculator-title`.
+The stale selector is local to `konard/numbers-vectorization`, where the app UI
+changed to the Numbers Vectorization interface.

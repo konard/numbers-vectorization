@@ -1,0 +1,281 @@
+Check Links	UNKNOWN STEP	﻿2026-06-26T16:10:39.2370737Z Current runner version: '2.335.1'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2393536Z ##[group]Runner Image Provisioner
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2394341Z Hosted Compute Agent
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2394817Z Version: 20260611.554
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2395671Z Commit: 5e0782fdc9014723d3be820dd114dd31555c2bd1
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2396267Z Build Date: 2026-06-11T21:40:46Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2396814Z Worker ID: {2122475d-4ff5-4a80-ab97-b1d1ab02d86c}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2397699Z Azure Region: westcentralus
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2398195Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2399435Z ##[group]Operating System
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2399954Z Ubuntu
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2400378Z 24.04.4
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2400838Z LTS
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2401256Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2401714Z ##[group]Runner Image
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2402290Z Image: ubuntu-24.04
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2402750Z Version: 20260622.220.1
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2403762Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260622.220/images/ubuntu/Ubuntu2404-Readme.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2404999Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260622.220
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2405828Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2406712Z ##[group]GITHUB_TOKEN Permissions
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2408604Z Contents: read
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2409171Z Metadata: read
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2409705Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2411382Z Secret source: Actions
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2411957Z Prepare workflow directory
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2701738Z Prepare all required actions
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.2743931Z Getting action download info
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.6011556Z Download action repository 'actions/checkout@v6' (SHA:df4cb1c069e1874edd31b4311f1884172cec0e10)
+Check Links	UNKNOWN STEP	2026-06-26T16:10:39.6620875Z Download action repository 'lycheeverse/lychee-action@v2' (SHA:8646ba30535128ac92d33dfc9133794bfdd9b411)
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.0807074Z Complete job name: Check Links
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1366135Z ##[group]Run actions/checkout@v6
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1366775Z with:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1367320Z   repository: konard/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1370879Z   token: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1371223Z   ssh-strict: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1371571Z   ssh-user: git
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1371924Z   persist-credentials: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1372312Z   clean: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1372659Z   sparse-checkout-cone-mode: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1373063Z   fetch-depth: 1
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1373399Z   fetch-tags: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1373750Z   show-progress: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1374095Z   lfs: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1374422Z   submodules: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1374780Z   set-safe-directory: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.1375306Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2170469Z Syncing repository: konard/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2171907Z ##[group]Getting Git version info
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2172636Z Working directory is '/home/runner/work/numbers-vectorization/numbers-vectorization'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2173561Z [command]/usr/bin/git version
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2283223Z git version 2.54.0
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2299881Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2313024Z Temporarily overriding HOME='/home/runner/work/_temp/bff44912-c8f7-4d4d-acf4-551eaa20a606' before making global git config changes
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2316939Z Adding repository directory to the temporary git global config as a safe directory
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2318371Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/numbers-vectorization/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2346589Z Deleting the contents of '/home/runner/work/numbers-vectorization/numbers-vectorization'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2349794Z ##[group]Determining repository object format
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2351587Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2352260Z ##[group]Initializing the repository
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2355479Z [command]/usr/bin/git init /home/runner/work/numbers-vectorization/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2444474Z hint: Using 'master' as the name for the initial branch. This default branch name
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2445905Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2446832Z hint: to use in all of your new repositories, which will suppress this warning,
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2447681Z hint: call:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2447999Z hint:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2448410Z hint: 	git config --global init.defaultBranch <name>
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2448893Z hint:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2449338Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2450416Z hint: 'development'. The just-created branch can be renamed via this command:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2451011Z hint:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2451337Z hint: 	git branch -m <name>
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2451708Z hint:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2452237Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2453647Z Initialized empty Git repository in /home/runner/work/numbers-vectorization/numbers-vectorization/.git/
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2455173Z [command]/usr/bin/git remote add origin https://github.com/konard/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2510583Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2511211Z ##[group]Disabling automatic garbage collection
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2513282Z [command]/usr/bin/git config --local gc.auto 0
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2537660Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2538583Z ##[group]Setting up auth
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2539235Z Removing SSH command configuration
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2543376Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2570714Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2812832Z Removing HTTP extra header
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2818094Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.2845579Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3040420Z Removing includeIf entries pointing to credentials config files
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3045918Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3072361Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3271601Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3301205Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git.path /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3324051Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3347432Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3371036Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3391662Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3392258Z ##[group]Fetching the repository
+Check Links	UNKNOWN STEP	2026-06-26T16:10:40.3398334Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +70d4599ed0a2af9685898466adfca4e118b39e34:refs/remotes/origin/main
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5602683Z From https://github.com/konard/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5603694Z  * [new ref]         70d4599ed0a2af9685898466adfca4e118b39e34 -> origin/main
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5642243Z [command]/usr/bin/git branch --list --remote origin/main
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5663749Z   origin/main
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5672217Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5692302Z 70d4599ed0a2af9685898466adfca4e118b39e34
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5704218Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5705221Z ##[group]Determining the checkout info
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5706431Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5707531Z [command]/usr/bin/git sparse-checkout disable
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5735046Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5762131Z ##[group]Checking out the ref
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.5762834Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6176442Z Switched to a new branch 'main'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6178663Z branch 'main' set up to track 'origin/main'.
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6186142Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6223698Z [command]/usr/bin/git log -1 --format=%H
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6243518Z 70d4599ed0a2af9685898466adfca4e118b39e34
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6637537Z ##[group]Run lycheeverse/lychee-action@v2
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6638515Z with:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6640023Z   args: --verbose --no-progress --cache --max-cache-age 1d --max-retries 3 --timeout 30 --exclude-path docs/case-studies './**/*.md' './**/*.html'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6641668Z   fail: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6642409Z   output: lychee/out.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6643218Z   jobSummary: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6643971Z   debug: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6644704Z   failIfEmpty: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6645471Z   format: markdown
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6646242Z   lycheeVersion: v0.23.0
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6647042Z   checkbox: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6654010Z   token: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6654803Z   workingDirectory: .
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6655577Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6662347Z   GITHUB_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6663124Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6758438Z ##[group]Run echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6759633Z ^[[36;1mecho "$HOME/.local/bin" >> "$GITHUB_PATH"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:41.6760590Z ^[[36;1mmkdir -p "$HOME/.local/bin"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.5697485Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.5697986Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.5701947Z   GITHUB_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.5702256Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6265251Z ##[group]Run # Remove any existing lychee binary to prevent conflicts
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6265709Z ^[[36;1m# Remove any existing lychee binary to prevent conflicts^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6266009Z ^[[36;1mrm -f "$HOME/.local/bin/lychee"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6294590Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6294884Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6297317Z   GITHUB_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.6297515Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7291656Z ##[group]Run # Create a temporary directory for downloads and extraction
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7292102Z ^[[36;1m# Create a temporary directory for downloads and extraction^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7292439Z ^[[36;1mTEMP_DIR="${RUNNER_TEMP}/lychee-download"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7292712Z ^[[36;1mmkdir -p "${TEMP_DIR}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7292935Z ^[[36;1mcd "${TEMP_DIR}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7293124Z ^[[36;1m^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7293288Z ^[[36;1mARCH=$(uname -m)^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7293529Z ^[[36;1m# Determine filename and download URL based on version^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7293849Z ^[[36;1mif [[ "${LYCHEE_VERSION}" =~ ^v0\.0|^v0\.1[0-5]\. ]]; then^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7294206Z ^[[36;1m  FILENAME="lychee-${LYCHEE_VERSION}-${ARCH}-unknown-linux-gnu.tar.gz"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7294736Z ^[[36;1m  DOWNLOAD_URL="https://github.com/lycheeverse/lychee/releases/download/${LYCHEE_VERSION}/${FILENAME}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7295171Z ^[[36;1melse^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7295401Z ^[[36;1m  FILENAME="lychee-${ARCH}-unknown-linux-gnu.tar.gz"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7295874Z ^[[36;1m  if [[ "${LYCHEE_VERSION}" == 'nightly' ]]; then^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7296279Z ^[[36;1m    DOWNLOAD_URL="https://github.com/lycheeverse/lychee/releases/download/nightly/${FILENAME}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7296684Z ^[[36;1m  elif [[ "${LYCHEE_VERSION}" == 'latest' ]]; then^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7297060Z ^[[36;1m    DOWNLOAD_URL="https://github.com/lycheeverse/lychee/releases/latest/download/${FILENAME}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7297724Z ^[[36;1m  else^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7298114Z ^[[36;1m    DOWNLOAD_URL="https://github.com/lycheeverse/lychee/releases/download/lychee-${LYCHEE_VERSION}/${FILENAME}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7298561Z ^[[36;1m  fi^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7298724Z ^[[36;1mfi^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7298882Z ^[[36;1m^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7299067Z ^[[36;1mecho "Downloading from: ${DOWNLOAD_URL}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7299313Z ^[[36;1mcurl -sfLO "${DOWNLOAD_URL}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7299517Z ^[[36;1m^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7299688Z ^[[36;1mecho "Extracting ${FILENAME}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7299926Z ^[[36;1mtar -xvzf "${FILENAME}"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7300124Z ^[[36;1m^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7300475Z ^[[36;1m# Output temp directory for use in later steps^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7300760Z ^[[36;1mecho "temp_dir=${TEMP_DIR}" >> $GITHUB_OUTPUT^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7329245Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7329528Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7331855Z   GITHUB_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7332050Z   LYCHEE_VERSION: v0.23.0
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7332248Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:42.7780544Z Downloading from: https://github.com/lycheeverse/lychee/releases/download/lychee-v0.23.0/lychee-x86_64-unknown-linux-gnu.tar.gz
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.2483060Z Extracting lychee-x86_64-unknown-linux-gnu.tar.gz
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.2506931Z lychee
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3647407Z docs/
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3647858Z docs/README.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3648706Z docs/TROUBLESHOOTING.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3648997Z docs/lychee.1
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3649508Z docs/PRE_COMMIT.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3708211Z ##[group]Run # Install lychee from the temporary directory
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3708543Z ^[[36;1m# Install lychee from the temporary directory^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3708916Z ^[[36;1minstall -t "$HOME/.local/bin" -D "/home/runner/work/_temp/lychee-download/lychee"^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3735924Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3736191Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3738664Z   GITHUB_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.3738851Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6093358Z ##[group]Run /home/runner/work/_actions/lycheeverse/lychee-action/v2/entrypoint.sh
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6093811Z ^[[36;1m/home/runner/work/_actions/lycheeverse/lychee-action/v2/entrypoint.sh^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6121082Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6121346Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6123679Z   GITHUB_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6125902Z   INPUT_TOKEN: ***
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6126364Z   INPUT_ARGS: --verbose --no-progress --cache --max-cache-age 1d --max-retries 3 --timeout 30 --exclude-path docs/case-studies './**/*.md' './**/*.html'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6126885Z   INPUT_DEBUG: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6127062Z   INPUT_FAIL: false
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6127361Z   INPUT_FAILIFEMPTY: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6127550Z   INPUT_FORMAT: markdown
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6127732Z   INPUT_JOBSUMMARY: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6127904Z   INPUT_CHECKBOX: true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6128081Z   INPUT_OUTPUT: lychee/out.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6128467Z   SUMMARY_URL: https://github.com/konard/numbers-vectorization/actions/runs/28250265395#summary-83699724659
+Check Links	UNKNOWN STEP	2026-06-26T16:10:43.6128859Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:44.1277292Z [EXCLUDED] https://www.npmjs.com/package/browser-commander
+Check Links	UNKNOWN STEP	2026-06-26T16:10:44.1277861Z [EXCLUDED] https://web.archive.org/
+Check Links	UNKNOWN STEP	2026-06-26T16:10:44.1288547Z [ERROR] error: | Error building URL for "/favicon.svg" (Attribute: Some("href")): Cannot convert path '/favicon.svg' to a URI: To resolve root-relative links in local files, provide a root dir
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3155125Z # Summary
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3155576Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3155879Z | Status         | Count |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3156563Z |----------------|-------|
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3157760Z | 🔍 Total       | 28    |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3158673Z | ✅ Successful  | 25    |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3158999Z | ⏳ Timeouts    | 0     |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3159304Z | 🔀 Redirected  | 0     |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3159613Z | 👻 Excluded    | 2     |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3159904Z | ❓ Unknown     | 0     |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3160207Z | 🚫 Errors      | 1     |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3160519Z | ⛔ Unsupported | 0     |
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3160693Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3160791Z ## Errors per input
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3160946Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3161102Z ### Errors in examples/universal-app/index.html
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3161386Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3162128Z * [ERROR] <error:> | Error building URL for "/favicon.svg" (Attribute: Some("href")): Cannot convert path '/favicon.svg' to a URI: To resolve root-relative links in local files, provide a root dir
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3163025Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3163034Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3188184Z ##[notice]Summary report available at: https://github.com/konard/numbers-vectorization/actions/runs/28250265395#summary-83699724659
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3273694Z ##[group]Run node scripts/check-web-archive.mjs
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3273998Z ^[[36;1mnode scripts/check-web-archive.mjs^[[0m
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3301456Z shell: /usr/bin/bash -e {0}
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3301664Z env:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3301833Z   LYCHEE_OUTPUT: lychee/out.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3302035Z ##[endgroup]
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3572870Z === Web Archive Fallback Check ===
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3573191Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3573972Z Reading lychee output from: lychee/out.md
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3574230Z
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3577632Z No broken URLs found in lychee output.
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3578527Z all_archived=true
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.3704105Z Post job cleanup.
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4360574Z [command]/usr/bin/git version
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4390752Z git version 2.54.0
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4423600Z Temporarily overriding HOME='/home/runner/work/_temp/40254933-c123-4177-b121-915ad977bf8c' before making global git config changes
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4425246Z Adding repository directory to the temporary git global config as a safe directory
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4427933Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/numbers-vectorization/numbers-vectorization
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4452658Z Removing SSH command configuration
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4457535Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4484966Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4705876Z Removing HTTP extra header
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4711032Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4741638Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4930580Z Removing includeIf entries pointing to credentials config files
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4936471Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4957431Z includeif.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4958318Z includeif.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git/worktrees/*.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4958982Z includeif.gitdir:/github/workspace/.git.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4959425Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4964781Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4982871Z /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.4991315Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git.path /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5019115Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git/worktrees/*.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5036783Z /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5044266Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/numbers-vectorization/numbers-vectorization/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5070896Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5088167Z /github/runner_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5094557Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5119721Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5137083Z /github/runner_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5145706Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5172901Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5356134Z Removing credentials config '/home/runner/work/_temp/git-credentials-899db896-78f1-4d59-861b-93e12af0f640.config'
+Check Links	UNKNOWN STEP	2026-06-26T16:10:46.5526798Z Cleaning up orphan processes

@@ -1,0 +1,19 @@
+
+> @link-foundation/example-package-name@0.12.0 prepare
+> husky || true
+
+
+added 320 packages, and audited 321 packages in 5s
+
+74 packages are looking for funding
+  run `npm fund` for details
+
+19 vulnerabilities (16 moderate, 3 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
