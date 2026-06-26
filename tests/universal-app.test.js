@@ -137,6 +137,10 @@ describe('universal React example app', () => {
     expect(script).toContain("from 'browser-commander'");
     expect(script).toContain("from 'playwright'");
     expect(script).toContain('docs/screenshots/example-app');
+    expect(script).toContain('#result-title');
+    expect(script).not.toContain('#calculator-title');
+    expect(script).toContain('let browser;');
+    expect(script).toContain('if (browser) {');
 
     expect(rootReadme).toContain('Auto-regenerated preview screenshots');
     expect(rootReadme).toContain('npm run example:web:preview-images');

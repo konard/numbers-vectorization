@@ -1,0 +1,164 @@
+TAP version 13
+# Subtest: universal React example app
+    # Subtest: defines the expected app package and build targets
+    ok 1 - defines the expected app package and build targets
+      ---
+      duration_ms: 1.736274
+      ...
+    # Subtest: renders the raster vectorization UI using package functions and MNIST data
+    ok 2 - renders the raster vectorization UI using package functions and MNIST data
+      ---
+      duration_ms: 0.362831
+      ...
+    # Subtest: shares the Vite build output with Capacitor and GitHub Pages
+    ok 3 - shares the Vite build output with Capacitor and GitHub Pages
+      ---
+      duration_ms: 0.228933
+      ...
+    # Subtest: adds root scripts and a workflow for web, desktop, and mobile checks
+    ok 4 - adds root scripts and a workflow for web, desktop, and mobile checks
+      ---
+      duration_ms: 0.483612
+      ...
+    # Subtest: documents local validation without store credentials
+    ok 5 - documents local validation without store credentials
+      ---
+      duration_ms: 0.218787
+      ...
+    # Subtest: regenerates preview screenshots with browser-commander on every push to main
+    not ok 6 - regenerates preview screenshots with browser-commander on every push to main
+      ---
+      duration_ms: 0.842409
+      location: '/tmp/gh-issue-solver-1782494744037/node_modules/test-anywhere/src/index.js:174:12'
+      failureType: 'testCodeFailure'
+      error: 'Expected "#!/usr/bin/env node\\n/**\\n * Regenerate the example-app preview screenshots that ship with this\\n * template (issue #62). Drives the built static bundle through a Chromium\\n * controlled by `browser-commander` so the README/site images always reflect\\n * the current UI rather than a hand-captured snapshot.\\n *\\n * Outputs:\\n *   - docs/screenshots/example-app/example-app-{en,ru}-{light,dark}.png\\n *   - docs/screenshots/example-app/example-app.png  (en/light fallback copy)\\n *\\n * Usage:\\n *   node scripts/update-preview-images.mjs\\n *   PREVIEW_VERBOSE=1 node scripts/update-preview-images.mjs\\n *   node scripts/update-preview-images.mjs --skip-build   # reuse existing dist\\n *\\n * Pattern reused from konard/vk-bot-desktop#52 (closes konard/vk-bot-desktop#51).\\n * The matrix is sized to demonstrate locale × theme variation even when the\\n * shipped example app does not yet have i18n or a theme toggle: downstream\\n * forks that add either get fresh per-cell screenshots without touching this\\n * script. Verbose mode (`PREVIEW_VERBOSE=1`) enables browser-commander\\n * tracing, dumps PNG signatures, and prints the resolved <html data-theme>\\n * and <html lang> so any future regression is diagnosable from CI logs alone.\\n */\\n/* global document, window, URL */\\n\\nimport { spawn } from \'node:child_process\';\\nimport { createServer } from \'node:http\';\\nimport { copyFile, mkdir, readFile, stat } from \'node:fs/promises\';\\nimport path from \'node:path\';\\nimport { fileURLToPath } from \'node:url\';\\n\\nimport { makeBrowserCommander } from \'browser-commander\';\\nimport { chromium } from \'playwright\';\\n\\nconst __dirname = path.dirname(fileURLToPath(import.meta.url));\\nconst repoRoot = path.resolve(__dirname, \'..\');\\nconst exampleAppRoot = path.resolve(repoRoot, \'examples\', \'universal-app\');\\nconst exampleAppDistDir = path.resolve(exampleAppRoot, \'dist\');\\nconst screenshotsDir = path.resolve(\\n  repoRoot,\\n  \'docs\',\\n  \'screenshots\',\\n  \'example-app\'\\n);\\n\\nconst VERBOSE =\\n  process.env.PREVIEW_VERBOSE === \'1\' || process.env.PREVIEW_VERBOSE === \'true\';\\n\\nconst VIEWPORT = { width: 1280, height: 800 };\\n\\nconst LOCALES = [\\n  { locale: \'en\', contextLocale: \'en-US\' },\\n  { locale: \'ru\', contextLocale: \'ru-RU\' },\\n];\\nconst THEMES = [\'light\', \'dark\'];\\n\\nconst contentTypes = new Map([\\n  [\'.css\', \'text/css; charset=utf-8\'],\\n  [\'.html\', \'text/html; charset=utf-8\'],\\n  [\'.js\', \'text/javascript; charset=utf-8\'],\\n  [\'.json\', \'application/json; charset=utf-8\'],\\n  [\'.map\', \'application/json; charset=utf-8\'],\\n  [\'.png\', \'image/png\'],\\n  [\'.svg\', \'image/svg+xml\'],\\n  [\'.woff\', \'font/woff\'],\\n  [\'.woff2\', \'font/woff2\'],\\n]);\\n\\nfunction log(message) {\\n  console.log(`[preview] ${message}`);\\n}\\n\\nfunction verbose(message) {\\n  if (VERBOSE) {\\n    console.log(`[preview:verbose] ${message}`);\\n  }\\n}\\n\\nfunction parseArgs(argv) {\\n  const args = { skipBuild: false };\\n  for (const value of argv) {\\n    if (value === \'--skip-build\') {\\n      args.skipBuild = true;\\n    } else if (value === \'--help\' || value === \'-h\') {\\n      args.help = true;\\n    } else {\\n      throw new Error(`Unknown argument: ${value}`);\\n    }\\n  }\\n  return args;\\n}\\n\\nfunction runNpm(args, cwd) {\\n  return new Promise((resolve, reject) => {\\n    log(`running npm ${args.join(\' \')} (cwd=${cwd})`);\\n    const npmCommand = process.platform === \'win32\' ? \'npm.cmd\' : \'npm\';\\n    const child = spawn(npmCommand, args, {\\n      cwd,\\n      stdio: \'inherit\',\\n      env: process.env,\\n    });\\n    child.once(\'error\', reject);\\n    child.once(\'exit\', (code) => {\\n      if (code === 0) {\\n        resolve();\\n      } else {\\n        reject(new Error(`npm ${args.join(\' \')} exited with code ${code}`));\\n      }\\n    });\\n  });\\n}\\n\\nasync function ensureExampleAppBuild() {\\n  // The example app keeps its own lockfile under examples/universal-app so a\\n  // top-level `npm ci` does not install vite/react. Make sure it is present\\n  // before invoking `vite build`.\\n  const distHasIndex = await stat(\\n    path.resolve(exampleAppDistDir, \'index.html\')\\n  ).catch(() => null);\\n  if (!distHasIndex) {\\n    await runNpm([\'ci\'], exampleAppRoot).catch(async () => {\\n      // `npm ci` requires package-lock.json to match. Fall back to install.\\n      await runNpm([\'install\', \'--no-audit\', \'--no-fund\'], exampleAppRoot);\\n    });\\n  }\\n  await runNpm([\'run\', \'build\'], exampleAppRoot);\\n}\\n\\nasync function createStaticServer(rootDir) {\\n  const root = path.resolve(rootDir);\\n\\n  const server = createServer(async (request, response) => {\\n    try {\\n      const requestUrl = new URL(request.url ?? \'/\', \'http://127.0.0.1\');\\n      const pathname =\\n        requestUrl.pathname === \'/\' ? \'/index.html\' : requestUrl.pathname;\\n      const requestedPath = path.resolve(\\n        root,\\n        `.${decodeURIComponent(pathname)}`\\n      );\\n\\n      if (\\n        requestedPath !== root &&\\n        !requestedPath.startsWith(`${root}${path.sep}`)\\n      ) {\\n        response.writeHead(403);\\n        response.end(\'Forbidden\');\\n        return;\\n      }\\n\\n      const fileStat = await stat(requestedPath);\\n      const filePath = fileStat.isDirectory()\\n        ? path.join(requestedPath, \'index.html\')\\n        : requestedPath;\\n      const body = await readFile(filePath);\\n      const contentType =\\n        contentTypes.get(path.extname(filePath)) ?? \'application/octet-stream\';\\n\\n      response.writeHead(200, { \'content-type\': contentType });\\n      response.end(body);\\n    } catch {\\n      response.writeHead(404);\\n      response.end(\'Not found\');\\n    }\\n  });\\n\\n  await new Promise((resolve, reject) => {\\n    server.once(\'error\', reject);\\n    server.listen(0, \'127.0.0.1\', resolve);\\n  });\\n\\n  const address = server.address();\\n  const url = `http://127.0.0.1:${address.port}/`;\\n\\n  return {\\n    url,\\n    close: () => new Promise((resolve) => server.close(resolve)),\\n  };\\n}\\n\\nfunction pngDimensions(buffer) {\\n  if (\\n    buffer.length < 24 ||\\n    buffer.toString(\'hex\', 0, 8) !== \'89504e470d0a1a0a\'\\n  ) {\\n    return null;\\n  }\\n  return {\\n    width: buffer.readUInt32BE(16),\\n    height: buffer.readUInt32BE(20),\\n  };\\n}\\n\\nasync function reportPng(label, filePath) {\\n  const buffer = await readFile(filePath);\\n  const dimensions = pngDimensions(buffer);\\n  const dimText = dimensions\\n    ? `${dimensions.width}x${dimensions.height}`\\n    : \'unknown\';\\n  log(`wrote ${label} (${buffer.length} bytes, ${dimText}) -> ${filePath}`);\\n  if (VERBOSE) {\\n    verbose(`PNG signature: ${buffer.toString(\'hex\', 0, 8)}`);\\n  }\\n}\\n\\nasync function captureTile({ browser, locale, theme, contextLocale, url }) {\\n  log(`capturing preview tile: locale=${locale} theme=${theme}`);\\n\\n  const context = await browser.newContext({\\n    locale: contextLocale,\\n    colorScheme: theme,\\n    viewport: VIEWPORT,\\n    deviceScaleFactor: 1,\\n    reducedMotion: \'reduce\',\\n  });\\n\\n  // Seed common theme storage keys downstream apps tend to use so a fork\\n  // adding theme support gets matrix coverage with no script edits.\\n  await context.addInitScript((themeValue) => {\\n    try {\\n      window.localStorage.setItem(\'theme\', themeValue);\\n      window.localStorage.setItem(\'color-scheme\', themeValue);\\n      document.documentElement.setAttribute(\'data-theme\', themeValue);\\n    } catch {\\n      // localStorage can be locked down; emulateMedia covers the CSS path.\\n    }\\n  }, theme);\\n\\n  const page = await context.newPage();\\n\\n  const commander = makeBrowserCommander({\\n    page,\\n    enableNavigationManager: false,\\n    enableNetworkTracking: false,\\n    verbose: VERBOSE,\\n  });\\n\\n  try {\\n    await commander.emulateMedia({ colorScheme: theme });\\n\\n    const navigation = await commander.goto({\\n      url,\\n      waitForStableUrlBefore: false,\\n      waitForStableUrlAfter: false,\\n      waitForNetworkIdle: false,\\n      timeout: 30000,\\n      verificationTimeout: 5000,\\n    });\\n    if (!navigation.verified) {\\n      throw new Error(\\n        `navigation not verified (${locale}/${theme}): ${navigation.reason}`\\n      );\\n    }\\n\\n    await commander.waitForSelector({ selector: \'.app-shell\', timeout: 10000 });\\n    await commander.waitForSelector({\\n      selector: \'#calculator-title\',\\n      timeout: 10000,\\n    });\\n    await page.waitForLoadState(\'networkidle\');\\n\\n    if (VERBOSE) {\\n      const probe = await commander.evaluate({\\n        fn: () => ({\\n          dataTheme: document.documentElement.getAttribute(\'data-theme\'),\\n          lang: document.documentElement.getAttribute(\'lang\'),\\n          heading: document.querySelector(\'h1\')?.textContent ?? \'\',\\n        }),\\n      });\\n      verbose(`probe(${locale}/${theme}): ${JSON.stringify(probe)}`);\\n    }\\n\\n    const outFile = path.resolve(\\n      screenshotsDir,\\n      `example-app-${locale}-${theme}.png`\\n    );\\n    await mkdir(screenshotsDir, { recursive: true });\\n    await page.screenshot({\\n      path: outFile,\\n      fullPage: false,\\n      animations: \'disabled\',\\n      caret: \'hide\',\\n    });\\n    await reportPng(`tile ${locale}/${theme}`, outFile);\\n    return outFile;\\n  } finally {\\n    await commander.destroy();\\n    await context.close();\\n  }\\n}\\n\\nasync function main() {\\n  const args = parseArgs(process.argv.slice(2));\\n  if (args.help) {\\n    console.log(\'Usage: node scripts/update-preview-images.mjs [--skip-build]\');\\n    return;\\n  }\\n\\n  if (!args.skipBuild) {\\n    await ensureExampleAppBuild();\\n  }\\n\\n  const server = await createStaticServer(exampleAppDistDir);\\n  log(`example-app server: ${server.url}`);\\n\\n  const browser = await chromium.launch({\\n    headless: true,\\n    args: [\'--no-sandbox\', \'--disable-setuid-sandbox\'],\\n  });\\n\\n  try {\\n    for (const { locale, contextLocale } of LOCALES) {\\n      for (const theme of THEMES) {\\n        await captureTile({\\n          browser,\\n          locale,\\n          theme,\\n          contextLocale,\\n          url: server.url,\\n        });\\n      }\\n    }\\n\\n    const fallback = path.resolve(screens'... 501 more characters
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        Object.toContain (file:///tmp/gh-issue-solver-1782494744037/node_modules/test-anywhere/src/index.js:566:15)
+        TestContext.<anonymous> (file:///tmp/gh-issue-solver-1782494744037/tests/universal-app.test.js:140:20)
+        Test.runInAsyncScope (node:async_hooks:206:9)
+        Test.run (node:internal/test_runner/test:796:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:526:18)
+        Test.postRun (node:internal/test_runner/test:889:19)
+        Test.run (node:internal/test_runner/test:835:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:526:7)
+      ...
+    1..6
+not ok 1 - universal React example app
+  ---
+  duration_ms: 7.863215
+  type: 'suite'
+  location: '/tmp/gh-issue-solver-1782494744037/node_modules/test-anywhere/src/index.js:205:12'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: workflow reliability policy
+    # Subtest: cancels superseded non-main runs without cancelling main runs
+    ok 1 - cancels superseded non-main runs without cancelling main runs
+      ---
+      duration_ms: 1.394724
+      ...
+    # Subtest: uploads preview regeneration artifacts when screenshot rendering fails
+    ok 2 - uploads preview regeneration artifacts when screenshot rendering fails
+      ---
+      duration_ms: 0.550081
+      ...
+    # Subtest: uses the official Playwright image for preview regeneration instead of downloading Chromium
+    ok 3 - uses the official Playwright image for preview regeneration instead of downloading Chromium
+      ---
+      duration_ms: 0.429723
+      ...
+    # Subtest: verifies desktop package output before uploading artifacts
+    ok 4 - verifies desktop package output before uploading artifacts
+      ---
+      duration_ms: 0.307019
+      ...
+    # Subtest: excludes Vite source HTML from raw lychee link checks
+    not ok 5 - excludes Vite source HTML from raw lychee link checks
+      ---
+      duration_ms: 2.075459
+      location: '/tmp/gh-issue-solver-1782494744037/node_modules/test-anywhere/src/index.js:174:12'
+      failureType: 'testCodeFailure'
+      error: 'Expected "name: Broken Link Checker\\n\\non:\\n  push:\\n    branches:\\n      - main\\n    paths:\\n      - \'**.md\'\\n      - \'**.html\'\\n      - \'.github/workflows/links.yml\'\\n  pull_request:\\n    types: [opened, synchronize, reopened]\\n    paths:\\n      - \'**.md\'\\n      - \'**.html\'\\n      - \'.github/workflows/links.yml\'\\n  workflow_dispatch:\\n\\n# Concurrency: Only one workflow run per branch at a time\\n# - For main branch: let runs finish so a newer push does not cancel an\\n#   in-flight link check.\\n# - For PR branches: cancel older runs so new pushes supersede stale checks.\\n# See: docs/case-studies/issue-25/DETAILED-COMPARISON.md for context\\nconcurrency:\\n  group: ${{ github.workflow }}-${{ github.ref }}\\n  cancel-in-progress: ${{ github.ref != \'refs/heads/main\' }}\\n\\njobs:\\n  link-checker:\\n    name: Check Links\\n    runs-on: ubuntu-latest\\n    # Typical run: <1min with lychee cache. 10min prevents slow\\n    # external hosts or Wayback Machine probes from hanging the workflow.\\n    timeout-minutes: 10\\n    permissions:\\n      contents: read\\n    steps:\\n      - uses: actions/checkout@v6\\n\\n      - name: Check links with lychee\\n        id: lychee\\n        uses: lycheeverse/lychee-action@v2\\n        with:\\n          # Check all Markdown and HTML files\\n          # Exclude case-studies directory - these are research documents from\\n          # external repos with references to files and issues that don\'t exist\\n          # in this repository (similar exclusion pattern as eslint.config.js)\\n          args: >-\\n            --verbose\\n            --no-progress\\n            --cache\\n            --max-cache-age 1d\\n            --max-retries 3\\n            --timeout 30\\n            --exclude-path docs/case-studies\\n            \'./**/*.md\'\\n            \'./**/*.html\'\\n          # Don\'t fail the workflow immediately - we want to check web archive first\\n          fail: false\\n          # Output file for broken links report (used by check-web-archive.mjs)\\n          output: lychee/out.md\\n          # Write a job summary\\n          jobSummary: true\\n        env:\\n          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\\n\\n      - name: Check broken links against Web Archive\\n        if: steps.lychee.outputs.exit_code != 0\\n        id: webarchive\\n        run: node scripts/check-web-archive.mjs\\n        env:\\n          LYCHEE_OUTPUT: lychee/out.md\\n\\n      - name: Fail if broken links found and no web archive fallback\\n        if: steps.lychee.outputs.exit_code != 0 && steps.webarchive.outputs.all_archived != \'true\'\\n        run: |\\n          echo \\"::error::Broken links were detected with no Web Archive fallback available.\\"\\n          echo \\"\\"\\n          echo \\"What happened:\\"\\n          echo \\"  lychee found one or more broken links in the *.md and *.html files of this repository.\\"\\n          echo \\"  The Web Archive (Wayback Machine) check found no archived versions for some of them.\\"\\n          echo \\"\\"\\n          echo \\"How to fix:\\"\\n          echo \\"  1. Review the \'Check links with lychee\' step above for a full list of broken links.\\"\\n          echo \\"  2. For links marked with a \'::notice::\' annotation above, a Web Archive version exists.\\"\\n          echo \\"     Replace those broken links with the suggested archive.org URL.\\"\\n          echo \\"  3. For links with no archive version, either:\\"\\n          echo \\"     a. Find an updated URL that points to the same or equivalent content.\\"\\n          echo \\"     b. Remove the link if the content is no longer relevant.\\"\\n          echo \\"     c. Add the URL to .lycheeignore if it is a known false positive.\\"\\n          echo \\"\\"\\n          echo \\"Report location: lychee/out.md (available as a workflow artifact if configured).\\"\\n          exit 1\\n" to contain "--exclude-path examples/universal-app/index.html"'
+      code: 'ERR_TEST_FAILURE'
+      stack: |-
+        Object.toContain (file:///tmp/gh-issue-solver-1782494744037/node_modules/test-anywhere/src/index.js:566:15)
+        TestContext.<anonymous> (file:///tmp/gh-issue-solver-1782494744037/tests/workflow-reliability.test.js:193:27)
+        Test.runInAsyncScope (node:async_hooks:206:9)
+        Test.run (node:internal/test_runner/test:796:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:526:18)
+        Test.postRun (node:internal/test_runner/test:889:19)
+        Test.run (node:internal/test_runner/test:835:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:526:7)
+      ...
+    1..5
+not ok 2 - workflow reliability policy
+  ---
+  duration_ms: 6.10583
+  type: 'suite'
+  location: '/tmp/gh-issue-solver-1782494744037/node_modules/test-anywhere/src/index.js:205:12'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: release workflow change gates
+    # Subtest: skips the slow test matrix for pull requests with no code changes
+    ok 1 - skips the slow test matrix for pull requests with no code changes
+      ---
+      duration_ms: 0.779534
+      ...
+    # Subtest: runs the slow test matrix for workflow changes after fast checks pass
+    ok 2 - runs the slow test matrix for workflow changes after fast checks pass
+      ---
+      duration_ms: 0.417633
+      ...
+    1..2
+ok 3 - release workflow change gates
+  ---
+  duration_ms: 1.446951
+  type: 'suite'
+  ...
+# Subtest: npm publish token bootstrap (issue \#77)
+    # Subtest: passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the release publish step
+    ok 1 - passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the release publish step
+      ---
+      duration_ms: 0.35475
+      ...
+    # Subtest: passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the instant-release publish step
+    ok 2 - passes secrets.NPM_TOKEN as NODE_AUTH_TOKEN on the instant-release publish step
+      ---
+      duration_ms: 0.206518
+      ...
+    1..2
+ok 4 - npm publish token bootstrap (issue \#77)
+  ---
+  duration_ms: 0.720566
+  type: 'suite'
+  ...
+# Subtest: install-from-package smoke test (issue \#81)
+    # Subtest: smoke-tests the published npm package in the release job
+    ok 1 - smoke-tests the published npm package in the release job
+      ---
+      duration_ms: 0.40835
+      ...
+    # Subtest: smoke-tests the published npm package in the instant-release job
+    ok 2 - smoke-tests the published npm package in the instant-release job
+      ---
+      duration_ms: 0.187911
+      ...
+    1..2
+ok 5 - install-from-package smoke test (issue \#81)
+  ---
+  duration_ms: 0.700166
+  type: 'suite'
+  ...
+1..5
+# tests 17
+# suites 5
+# pass 15
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 107.320431

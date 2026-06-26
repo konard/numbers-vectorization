@@ -1,0 +1,9 @@
+
+> @link-foundation/example-package-name@0.12.0 check:duplication
+> jscpd .
+
+[3m[90mtime[39m[23m: 0.683ms
+
+[90m💡 Auto-refactor with AI: npx skills add kucherenko/jscpd[39m
+[90m🎩 New: Gangsta Agents — discipline your AI coding → gangsta.page[39m
+[90m💖 Support jscpd project → https://opencollective.com/jscpd[39m

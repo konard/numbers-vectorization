@@ -1,0 +1,54 @@
+--- docs/case-studies/issue-3/data/templates/js/scripts/update-preview-images.mjs	2026-06-26 17:39:05.474145100 +0000
++++ docs/case-studies/issue-3/data/templates/current/scripts/update-preview-images.mjs	2026-06-26 17:51:23.351227423 +0000
+@@ -48,6 +48,7 @@
+   process.env.PREVIEW_VERBOSE === '1' || process.env.PREVIEW_VERBOSE === 'true';
+
+ const VIEWPORT = { width: 1280, height: 800 };
++const APP_READY_SELECTORS = ['.app-shell', '#result-title', '.analysis-grid'];
+
+ const LOCALES = [
+   { locale: 'en', contextLocale: 'en-US' },
+@@ -253,11 +254,9 @@
+       );
+     }
+
+-    await commander.waitForSelector({ selector: '.app-shell', timeout: 10000 });
+-    await commander.waitForSelector({
+-      selector: '#calculator-title',
+-      timeout: 10000,
+-    });
++    for (const selector of APP_READY_SELECTORS) {
++      await commander.waitForSelector({ selector, timeout: 10000 });
++    }
+     await page.waitForLoadState('networkidle');
+
+     if (VERBOSE) {
+@@ -304,12 +303,14 @@
+   const server = await createStaticServer(exampleAppDistDir);
+   log(`example-app server: ${server.url}`);
+
+-  const browser = await chromium.launch({
+-    headless: true,
+-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+-  });
++  let browser;
+
+   try {
++    browser = await chromium.launch({
++      headless: true,
++      args: ['--no-sandbox', '--disable-setuid-sandbox'],
++    });
++
+     for (const { locale, contextLocale } of LOCALES) {
+       for (const theme of THEMES) {
+         await captureTile({
+@@ -330,7 +331,9 @@
+     await copyFile(fallbackSource, fallback);
+     await reportPng('fallback (en/light copy)', fallback);
+   } finally {
+-    await browser.close();
++    if (browser) {
++      await browser.close();
++    }
+     await server.close();
+   }

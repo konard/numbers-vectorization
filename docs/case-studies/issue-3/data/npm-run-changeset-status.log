@@ -1,0 +1,11 @@
+
+> @link-foundation/example-package-name@0.12.0 changeset:status
+> changeset status --since=origin/main
+
+🦋  info Packages to be bumped at patch:
+🦋  info
+🦋  - @link-foundation/example-package-name
+🦋  ---
+🦋  info NO packages to be bumped at minor
+🦋  ---
+🦋  info NO packages to be bumped at major

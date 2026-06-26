@@ -1,338 +1,189 @@
-# Case Study: Issue #3 - Release Formatting Script Only Handles Patch Changes
+# Case Study: Issue #3 - CI/CD False Positives and Preview Failure
 
-## Issue Overview
+## Scope
 
-**Issue:** [#3](https://github.com/link-foundation/js-ai-driven-development-pipeline-template/issues/3)
-**Title:** Release formatting script only handles Patch changes, not Minor/Major
-**Status:** In Progress
-**Created:** 2025-12-17
+Issue: https://github.com/konard/numbers-vectorization/issues/3
 
-### Problem Statement
+Pull request: https://github.com/konard/numbers-vectorization/pull/4
 
-The `scripts/format-release-notes.mjs` script only handles `### Patch Changes` sections, causing it to fail on Minor and Major releases.
+Branch: `issue-3-1dc8e615d8a2`
 
-**Current Behavior:**
+This investigation checked the reported CI/CD runs, preserved logs and
+artifacts, compared this repository with the referenced pipeline templates, and
+fixed the confirmed repository-local failures and false positives.
 
-- Section headers (### Minor Changes, ### Major Changes) remain in release notes
-- PR detection is skipped
-- Release formatting fails silently
+## Data Collected
 
-**Expected Behavior:**
+- GitHub Actions logs:
+  - `ci-logs/run-28250265337.log`
+  - `ci-logs/run-28250265395.log`
+- Run and job metadata:
+  - `data/run-28250265337.json`
+  - `data/run-28250265337-jobs.json`
+  - `data/run-28250265395.json`
+  - `data/run-28250265395-jobs.json`
+- Screenshot failure artifact:
+  - `artifacts/preview-regen-failure-28250265337.zip`
+  - `artifacts/preview-regen-failure-28250265337/`
+- Template workflow copies and diffs:
+  - `data/templates/`
+  - `data/template-diff-js-current-links.patch`
+  - `data/template-diff-js-current-update-preview-images.patch`
+- Reproduction and verification logs:
+  - `data/reproducer-tests-before-fix.log`
+  - `data/reproducer-tests-after-fix.log`
+  - `data/lychee-final-clean-checkout-equivalent-output.md`
+  - `data/update-preview-images-after-fix.log`
 
-- Release notes should be formatted cleanly without section headers
-- PR detection should work for all release types
-- NPM badge should be added
+## Timeline
 
-## Timeline of Events
+- 2026-06-26 16:10:35 UTC: `Example app` run
+  `28250265337` and `Broken Link Checker` run `28250265395` started from
+  `main` commit `70d4599ed0a2af9685898466adfca4e118b39e34`.
+- 2026-06-26 16:10:48 UTC: `Broken Link Checker` completed successfully, but
+  its lychee output contained a root-relative local HTML error.
+- 2026-06-26 17:07:20 UTC: `Example app / Regenerate Preview Images` failed
+  while waiting for a stale selector.
+- 2026-06-26 17:07:21 UTC: the workflow uploaded
+  `preview-regen-failure-28250265337`.
+- 2026-06-26 17:24:57 UTC: issue #3 was opened.
+- 2026-06-26 17:25:45 UTC: PR #4 branch placeholder commit was created.
 
-### December 13, 2025
+## Finding 1: Preview Regeneration Was a Real Failure
 
-1. **Initial commit** - Template repository created with format-release-notes.mjs script
-2. **Release v0.1.0 created** - First release with Minor Changes section
-3. **Bug manifested** - Release shows "### Minor Changes" header and no PR link
+Run `28250265337` failed only in the `Regenerate Preview Images` job. The
+specific error is in `ci-logs/run-28250265337.log`:
 
-### December 16, 2025
+- line 610: `locator.waitFor: Timeout 10000ms exceeded.`
+- line 612: waiting for `locator('#calculator-title')` to be visible
 
-1. **Bug discovered in link-assistant/agent** - Issue #58 reported in downstream repository
-2. **Fix implemented** - PR #59 created with solution
-3. **Case study documented** - Comprehensive analysis in docs/case-studies/issue-58/
+The current React app renders `Numbers Vectorization` and uses current stable
+elements such as `.app-shell`, `#result-title`, and `.analysis-grid`. It does
+not render `#calculator-title`. The screenshot script still waited for the old
+template app heading, so browser-commander waited until timeout and the job
+failed.
 
-### December 17, 2025
+The downloaded failure artifact confirmed that the previously committed
+screenshots still showed the old `Universal Example App` template UI rather
+than the current Numbers Vectorization app.
 
-1. **03:45 UTC** - Issue #3 created in template repository
-2. **03:47 UTC** - Comment added requesting:
-   - Find all repositories with same issue
-   - Create issues in those repositories
-   - Compile comprehensive case study in docs/case-studies/issue-3/
-   - Reconstruct timeline and root causes
-   - Propose solutions
+### Fix
 
-## Data Collection
+`scripts/update-preview-images.mjs` now waits for current app readiness
+selectors:
 
-### Affected Repositories
+- `.app-shell`
+- `#result-title`
+- `.analysis-grid`
 
-Search revealed 4 repositories with the same script:
+The script also closes the local static server when Chromium launch fails. This
+cleanup was found during local verification when the workspace had Playwright
+installed but the matching Chromium binary was not yet downloaded.
 
-1. **link-foundation/js-ai-driven-development-pipeline-template** (this repo)
-   - Path: scripts/format-release-notes.mjs
-   - URL: https://github.com/link-foundation/js-ai-driven-development-pipeline-template
+### Verification
 
-2. **link-foundation/test-anywhere**
-   - Path: scripts/format-release-notes.mjs
-   - URL: https://github.com/link-foundation/test-anywhere
+- `data/reproducer-tests-before-fix.log`: the focused tests failed on the
+  missing current selector expectation.
+- `data/reproducer-tests-after-fix.log`: the focused tests passed.
+- `data/update-preview-images-after-fix.log`: the preview script completed and
+  wrote all screenshot variants at `1280x800`.
+- `docs/screenshots/example-app/*.png`: regenerated to show the current Numbers
+  Vectorization UI.
 
-3. **link-foundation/gh-download-pull-request**
-   - Path: scripts/format-release-notes.mjs
-   - URL: https://github.com/link-foundation/gh-download-pull-request
+## Finding 2: Broken Link Checker Had a False-Positive Error
 
-4. **link-foundation/gh-download-issue**
-   - Path: scripts/format-release-notes.mjs
-   - URL: https://github.com/link-foundation/gh-download-issue
+Run `28250265395` concluded successfully, but lychee reported an error while
+checking raw source HTML:
 
-### Release v0.1.0 Data
+- `ci-logs/run-28250265395.log` line 215:
+  `Error building URL for "/favicon.svg"`
+- line 247: `No broken URLs found in lychee output.`
+- line 248: `all_archived=true`
 
-**Release:** https://github.com/link-foundation/js-ai-driven-development-pipeline-template/releases/tag/v0.1.0
+The root cause was `examples/universal-app/index.html`, which is Vite source
+HTML and intentionally contains root-relative app asset paths:
 
-**Current Body (Problematic):**
+- `/favicon.svg`
+- `/src/main.js`
 
-```markdown
-### Minor Changes
+Those paths are valid when Vite serves or builds the app, but lychee checks the
+raw file in a repository checkout. That produced a noisy error even though the
+workflow ended green because `fail: false` delegated final failure handling to
+the Web Archive step.
 
-- 65d76dc: Initial template setup with complete AI-driven development pipeline
+### Fix
 
-  Features:
-  - Multi-runtime support for Node.js, Bun, and Deno
-  - Universal testing with test-anywhere framework
-  - Automated release workflow with changesets
-  - GitHub Actions CI/CD pipeline with 9 test combinations
-  - Code quality tools: ESLint + Prettier with Husky pre-commit hooks
-  - Package manager agnostic design
+`.github/workflows/links.yml` now excludes
+`examples/universal-app/index.html` from raw lychee checks. The built app is
+still covered by the Example app workflow, while the link checker remains
+focused on repository documentation links.
+
+### Verification
+
+Local lychee reproductions showed:
+
+- `data/lychee-current-output.md`: current workflow arguments reproduce the
+  root-relative HTML error.
+- `data/lychee-exclude-app-index-output.md`: excluding the Vite source HTML
+  removes the error.
+- `data/lychee-final-clean-checkout-equivalent-output.md`: final arguments
+  exit with `0`, `25 OK`, and `0 Errors`.
+
+## Finding 3: Desktop Package Error Lines Were Log Echoes
+
+Run `28250265337` also contained lines that looked like errors:
+
+- `ci-logs/run-28250265337.log` line 895
+- line 1232
+- line 1582
+
+Each line is the GitHub Actions shell echo of the guard command:
+
+```sh
+echo "::error::Desktop package output was not created at examples/universal-app/out"
 ```
 
-**CHANGELOG.md Content:**
-
-```markdown
-## 0.1.0
-
-### Minor Changes
-
-- 65d76dc: Initial template setup with complete AI-driven development pipeline
-
-  Features:
-  - Multi-runtime support for Node.js, Bun, and Deno
-  - Universal testing with test-anywhere framework
-  - Automated release workflow with changesets
-  - GitHub Actions CI/CD pipeline with 9 test combinations
-  - Code quality tools: ESLint + Prettier with Husky pre-commit hooks
-  - Package manager agnostic design
-```
-
-## Root Cause Analysis
-
-### Bug #1: Incorrect Section Header Remaining
-
-**File:** `scripts/format-release-notes.mjs`
-**Lines:** 92-115
-
-The script only matches `### Patch Changes` sections:
-
-```javascript
-const patchChangesMatchWithHash = currentBody.match(
-  /### Patch Changes\s*\n\s*-\s+([a-f0-9]+):\s+(.+?)$/s
-);
-const patchChangesMatchNoHash = currentBody.match(
-  /### Patch Changes\s*\n\s*-\s+(.+?)$/s
-);
-```
-
-**Root Cause:**
-
-- The regex pattern is hardcoded to only match `### Patch Changes`
-- When a release contains `### Minor Changes` or `### Major Changes`, the pattern doesn't match
-- Script exits early with warning message (line 113)
-- Section header remains in the release notes unprocessed
-
-### Bug #2: Missing PR Link
-
-**Related to Bug #1**
-
-Because the script exits early when it can't parse the changes section:
-
-- Commit hash is never extracted (lines 106-115)
-- PR detection logic is never reached (lines 136-182)
-- No PR link is added to release notes
-
-### Bug #3: Missing NPM Badge
-
-**Related to Bug #1**
-
-The NPM badge formatting (lines 184-195) is also never reached:
-
-- Script exits before building formatted body
-- No shields.io badge is added
-
-## Comparison with Changesets Default Behavior
-
-### Changesets CHANGELOG Format
-
-Changesets CLI generates CHANGELOG.md with section headers for organizational purposes:
-
-- `### Major Changes` - Breaking changes (X.0.0)
-- `### Minor Changes` - New features (0.X.0)
-- `### Patch Changes` - Bug fixes (0.0.X)
-
-**Sources:**
-
-- [Changesets GitHub Repository](https://github.com/changesets/changesets)
-- [Changesets Detailed Documentation](https://github.com/changesets/changesets/blob/main/docs/detailed-explanation.md)
-- [NPM Package](https://www.npmjs.com/package/@changesets/cli)
-- [LogRocket Guide to Changesets](https://blog.logrocket.com/version-management-changesets/)
-
-### Why This is a Problem for GitHub Releases
-
-1. **CHANGELOG.md vs GitHub Releases** - Section headers are useful in CHANGELOG.md for organizing multiple version entries, but redundant in individual GitHub Releases
-2. **Version already indicates type** - A v0.1.0 release is clearly a minor version; the "### Minor Changes" header is redundant
-3. **User expectations** - GitHub Release notes should be clean, concise, and focused on content, not categorization
-
-## Reference Implementation
-
-### link-assistant/agent Fix
-
-The bug was already fixed in a downstream repository:
-
-- **Repository:** link-assistant/agent
-- **Issue:** [#58](https://github.com/link-assistant/agent/issues/58)
-- **Pull Request:** [#59](https://github.com/link-assistant/agent/pull/59)
-- **Case Study:** docs/case-studies/issue-58/README.md
-
-### The Solution
-
-Replace hardcoded `### Patch Changes` regex with flexible pattern matching:
-
-```javascript
-// Match any changeset type (Major, Minor, or Patch)
-const changesPattern =
-  /### (Major|Minor|Patch) Changes\s*\n\s*-\s+(?:([a-f0-9]+):\s+)?(.+?)$/s;
-const changesMatch = currentBody.match(changesPattern);
-
-let commitHash = null;
-let rawDescription = null;
-let changeType = null;
-
-if (changesMatch) {
-  // Extract: [full match, changeType, commitHash (optional), description]
-  [, changeType, commitHash, rawDescription] = changesMatch;
-  console.log(`ℹ️ Found ${changeType} Changes section`);
-
-  // If commitHash is undefined and description contains it, try to extract
-  if (!commitHash && rawDescription) {
-    const descWithHashMatch = rawDescription.match(/^([a-f0-9]+):\s+(.+)$/s);
-    if (descWithHashMatch) {
-      [, commitHash, rawDescription] = descWithHashMatch;
-    }
-  }
-} else {
-  console.log('⚠️ Could not parse changes from release notes');
-  console.log('   Looking for pattern: ### [Major|Minor|Patch] Changes');
-  process.exit(0);
-}
-```
-
-**Key Improvements:**
-
-1. Uses capture group `(Major|Minor|Patch)` to match all changeset types
-2. Makes commit hash optional with non-capturing group `(?:...)?`
-3. Handles both formats: with and without commit hash
-4. Provides informative logging for debugging
-5. Continues to PR detection and formatting instead of exiting early
-
-## Proposed Solution
-
-### Implementation Steps
-
-1. **Update regex pattern** in scripts/format-release-notes.mjs:92-115
-   - Replace hardcoded "Patch Changes" with flexible "(Major|Minor|Patch) Changes"
-   - Handle optional commit hash in single regex
-   - Add fallback extraction for embedded commit hashes
-
-2. **Test all changeset types:**
-   - Create test script for Major changes
-   - Create test script for Minor changes
-   - Create test script for Patch changes
-
-3. **Verify expected outcomes:**
-   - Section headers removed
-   - PR detection works for all types
-   - NPM badge added
-   - Formatting preserved
-
-### Expected Results
-
-**After Fix - Release Notes Format:**
-
-```markdown
-Initial template setup with complete AI-driven development pipeline
-
-Features:
-
-- Multi-runtime support for Node.js, Bun, and Deno
-- Universal testing with test-anywhere framework
-- Automated release workflow with changesets
-- GitHub Actions CI/CD pipeline with 9 test combinations
-- Code quality tools: ESLint + Prettier with Husky pre-commit hooks
-- Package manager agnostic design
-
-**Related Pull Request:** #X
-
----
-
-[![npm version](https://img.shields.io/badge/npm-0.1.0-blue.svg)](https://www.npmjs.com/package/my-package/v/0.1.0)
-```
-
-**Key Changes:**
-
-1. ✅ NO "### Minor Changes" header
-2. ✅ Clean description starting directly with content
-3. ✅ PR link detected and shown
-4. ✅ NPM badge included
-5. ✅ Proper formatting with separator
-
-## Impact Assessment
-
-### Affected Releases
-
-**In this repository:**
-
-- v0.1.0 - Minor release with formatting bug
-
-**In downstream repositories:**
-
-- All Minor and Major releases fail formatting
-- Patch releases work correctly
-
-### Risk Analysis
-
-**Low Risk Fix:**
-
-- Script already handles edge cases for commit hash extraction
-- Only expanding pattern matching, not changing logic
-- Backward compatible with Patch changes
-- Already tested and proven in link-assistant/agent#59
-
-## Next Steps
-
-1. ✅ Create comprehensive case study (this document)
-2. ⏳ Create issues in affected repositories:
-   - link-foundation/test-anywhere
-   - link-foundation/gh-download-pull-request
-   - link-foundation/gh-download-issue
-3. ⏳ Implement fix in this repository
-4. ⏳ Create test scripts to validate all changeset types
-5. ⏳ Run local CI checks before committing
-6. ⏳ Update PR with solution details
-7. ⏳ Mark PR as ready for review
-
-## Files Modified
-
-1. `scripts/format-release-notes.mjs` - Implement flexible pattern matching
-2. `docs/case-studies/issue-3/README.md` - This case study
-3. `experiments/test-format-release-notes-*.mjs` - Test scripts for validation
-
-## Verification Steps
-
-1. Test script against mock Major changes
-2. Test script against mock Minor changes
-3. Test script against mock Patch changes
-4. Verify all three types:
-   - Remove section headers
-   - Extract commit hash
-   - Detect and link PR
-   - Add NPM badge
-   - Preserve formatting
-
-## References
-
-- [Changesets GitHub](https://github.com/changesets/changesets)
-- [Changesets Documentation](https://github.com/changesets/changesets/blob/main/docs/detailed-explanation.md)
-- [Reference Fix PR](https://github.com/link-assistant/agent/pull/59)
-- [Original Issue](https://github.com/link-foundation/js-ai-driven-development-pipeline-template/issues/3)
+The corresponding desktop package jobs all concluded `success` in
+`data/run-28250265337-jobs.json`, so this was not an actual failing path. No
+code change was needed for this item.
+
+## Template Comparison
+
+The referenced templates were checked and their workflow files were saved under
+`data/templates/`.
+
+| Repository                                                       | Relevant workflows                            | Result                                                                                                                                                                             |
+| ---------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `link-foundation/js-ai-driven-development-pipeline-template`     | `example-app.yml`, `links.yml`, `release.yml` | Same workflow surface as this repository. Its app still has `#calculator-title`, so the screenshot selector is not stale there. Its Vite source HTML link-check surface is shared. |
+| `link-foundation/rust-ai-driven-development-pipeline-template`   | `release.yml`                                 | No Vite example-app screenshot workflow or raw Vite source HTML link-check surface found.                                                                                          |
+| `link-foundation/python-ai-driven-development-pipeline-template` | `docs.yml`, `release.yml`                     | No matching example-app screenshot workflow found.                                                                                                                                 |
+| `link-foundation/csharp-ai-driven-development-pipeline-template` | `docs.yml`, `release.yml`                     | No matching example-app screenshot workflow found.                                                                                                                                 |
+
+The JavaScript template shared the lychee false-positive risk, so a separate
+template issue was filed:
+
+https://github.com/link-foundation/js-ai-driven-development-pipeline-template/issues/95
+
+## Code Changes
+
+- Added reproducing tests for:
+  - current preview screenshot readiness selectors
+  - raw lychee exclusion for Vite source HTML
+  - preview script cleanup when Chromium launch fails
+- Updated `scripts/update-preview-images.mjs` to use current app selectors and
+  clean up the server on browser launch failure.
+- Updated `.github/workflows/links.yml` to exclude
+  `examples/universal-app/index.html`.
+- Regenerated current example-app screenshots.
+- Added a patch changeset.
+- Replaced stale issue-3 case-study files that documented an unrelated
+  template release-notes issue.
+
+## Verification Summary
+
+- `node --test --test-timeout=30000 tests/universal-app.test.js tests/workflow-reliability.test.js`
+- `/tmp/lychee-v0.23.0/lychee ... --exclude-path examples/universal-app/index.html ...`
+- `PREVIEW_VERBOSE=1 node scripts/update-preview-images.mjs`
+
+Full repository checks were run after the case-study docs were updated and are
+recorded in the pull request workflow results.

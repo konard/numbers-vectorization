@@ -1,0 +1,42 @@
+[preview] running npm run build (cwd=/tmp/gh-issue-solver-1782494744037/examples/universal-app)
+
+> universal-example-app@0.1.0 build
+> vite build
+
+vite v6.4.2 building for production...
+transforming...
+✓ 24 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:  0.36 kB
+dist/assets/index-C2IizFp6.css    5.11 kB │ gzip:  1.68 kB
+dist/assets/index-C49_oBaE.js   210.62 kB │ gzip: 61.84 kB
+✓ built in 778ms
+[preview] example-app server: http://127.0.0.1:44673/
+[preview] capturing preview tile: locale=en theme=light
+🔌 Dialog manager started
+[preview:verbose] probe(en/light): {"dataTheme":null,"lang":"en","heading":"Numbers Vectorization"}
+[preview] wrote tile en/light (79478 bytes, 1280x800) -> /tmp/gh-issue-solver-1782494744037/docs/screenshots/example-app/example-app-en-light.png
+[preview:verbose] PNG signature: 89504e470d0a1a0a
+🔌 Dialog manager stopped
+[preview] capturing preview tile: locale=en theme=dark
+🔌 Dialog manager started
+[preview:verbose] probe(en/dark): {"dataTheme":null,"lang":"en","heading":"Numbers Vectorization"}
+[preview] wrote tile en/dark (79478 bytes, 1280x800) -> /tmp/gh-issue-solver-1782494744037/docs/screenshots/example-app/example-app-en-dark.png
+[preview:verbose] PNG signature: 89504e470d0a1a0a
+🔌 Dialog manager stopped
+[preview] capturing preview tile: locale=ru theme=light
+🔌 Dialog manager started
+[preview:verbose] probe(ru/light): {"dataTheme":null,"lang":"en","heading":"Numbers Vectorization"}
+[preview] wrote tile ru/light (79478 bytes, 1280x800) -> /tmp/gh-issue-solver-1782494744037/docs/screenshots/example-app/example-app-ru-light.png
+[preview:verbose] PNG signature: 89504e470d0a1a0a
+🔌 Dialog manager stopped
+[preview] capturing preview tile: locale=ru theme=dark
+🔌 Dialog manager started
+[preview:verbose] probe(ru/dark): {"dataTheme":null,"lang":"en","heading":"Numbers Vectorization"}
+[preview] wrote tile ru/dark (79478 bytes, 1280x800) -> /tmp/gh-issue-solver-1782494744037/docs/screenshots/example-app/example-app-ru-dark.png
+[preview:verbose] PNG signature: 89504e470d0a1a0a
+🔌 Dialog manager stopped
+[preview] wrote fallback (en/light copy) (79478 bytes, 1280x800) -> /tmp/gh-issue-solver-1782494744037/docs/screenshots/example-app/example-app.png
+[preview:verbose] PNG signature: 89504e470d0a1a0a
+[preview] all preview images regenerated

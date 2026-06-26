@@ -1,0 +1,19 @@
+--- docs/case-studies/issue-3/data/templates/js/.github/workflows/links.yml	2026-06-26 17:38:34.470351702 +0000
++++ docs/case-studies/issue-3/data/templates/current/.github/workflows/links.yml	2026-06-26 17:51:23.349227436 +0000
+@@ -45,6 +45,8 @@
+           # Exclude case-studies directory - these are research documents from
+           # external repos with references to files and issues that don't exist
+           # in this repository (similar exclusion pattern as eslint.config.js)
++          # Exclude Vite source HTML because its root-relative app asset paths
++          # are resolved during build and covered by the Example app workflow.
+           args: >-
+             --verbose
+             --no-progress
+@@ -53,6 +55,7 @@
+             --max-retries 3
+             --timeout 30
+             --exclude-path docs/case-studies
++            --exclude-path examples/universal-app/index.html
+             './**/*.md'
+             './**/*.html'
+           # Don't fail the workflow immediately - we want to check web archive first
