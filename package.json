@@ -19,10 +19,19 @@
     ".": {
       "types": "./src/index.d.ts",
       "import": "./src/index.js"
+    },
+    "./node": {
+      "types": "./src/node.d.ts",
+      "import": "./src/node.js"
+    },
+    "./server": {
+      "types": "./src/server.d.ts",
+      "import": "./src/server.js"
     }
   },
   "scripts": {
     "test": "node --test --test-timeout=30000 tests/*.test.js",
+    "start": "node bin/example-package-name.js serve",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

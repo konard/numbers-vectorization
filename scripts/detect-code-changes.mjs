@@ -165,7 +165,8 @@ function detectChanges() {
   }
   console.log('');
 
-  const codePattern = /\.(mjs|cjs|js|json|yml|yaml)$|\.github\/workflows\//;
+  const codePattern =
+    /\.(mjs|cjs|js|json|yml|yaml)$|\.github\/workflows\/|(^|\/)Dockerfile$|^\.dockerignore$/;
   const anyCodeChanged = codeChangedFiles.some((file) =>
     codePattern.test(file)
   );

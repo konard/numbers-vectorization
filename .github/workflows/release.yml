@@ -321,6 +321,46 @@ jobs:
         if: matrix.runtime == 'deno'
         run: deno test --allow-read
 
+  # === DOCKER IMAGE SMOKE TEST ===
+  # Build the API server image from the checked-out sources and exercise it
+  # over HTTP, so a broken Dockerfile is caught before a release publishes it.
+  docker-build:
+    name: Docker image smoke test
+    runs-on: ubuntu-latest
+    # Typical run: ~1min (node:24-alpine pull + npm pack/install).
+    timeout-minutes: 15
+    needs: [detect-changes]
+    if: |
+      always() && !cancelled() &&
+      (
+        github.event_name == 'push' ||
+        needs.detect-changes.outputs.any-code-changed == 'true' ||
+        needs.detect-changes.outputs.package-changed == 'true'
+      )
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build image
+        run: docker build --tag numbers-vectorization:ci .
+
+      - name: Run API server container
+        run: docker run --detach --name numbers-vectorization --publish 3000:3000 numbers-vectorization:ci
+
+      - name: Check health and vectorize an example image
+        run: |
+          for attempt in $(seq 1 30); do
+            curl --silent --fail http://127.0.0.1:3000/health && break
+            sleep 1
+          done
+          curl --silent --fail http://127.0.0.1:3000/health
+          curl --silent --fail --data-binary @examples/images/mnist-8.png \
+            'http://127.0.0.1:3000/vectorize?format=svg' | tee result.svg
+          grep -q '<path' result.svg
+
+      - name: Show container logs
+        if: always()
+        run: docker logs numbers-vectorization || true
+
   # === DOCUMENTATION VALIDATION ===
   # Validate documentation files when docs change (hive-mind principle #12)
   validate-docs:
@@ -449,6 +489,10 @@ jobs:
 
       - name: Smoke-test published npm package
         if: steps.publish.outputs.published == 'true'
+        env:
+          SMOKE_TEST_SERVER_BIN: example-package-name
+          SMOKE_TEST_SERVER_ARGS: serve --port 38217 --host 127.0.0.1
+          SMOKE_TEST_SERVER_HEALTH_URL: http://127.0.0.1:38217/health
         run: node scripts/smoke-test-package.mjs --package-version "${{ steps.publish.outputs.published_version }}"
 
       - name: Create GitHub Release
@@ -513,6 +557,10 @@ jobs:
 
       - name: Smoke-test published npm package
         if: steps.publish.outputs.published == 'true'
+        env:
+          SMOKE_TEST_SERVER_BIN: example-package-name
+          SMOKE_TEST_SERVER_ARGS: serve --port 38217 --host 127.0.0.1
+          SMOKE_TEST_SERVER_HEALTH_URL: http://127.0.0.1:38217/health
         run: node scripts/smoke-test-package.mjs --package-version "${{ steps.publish.outputs.published_version }}"
 
       - name: Create GitHub Release
