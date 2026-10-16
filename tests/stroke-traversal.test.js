@@ -124,6 +124,19 @@ describe('stroke graph traversal (issue 5)', () => {
     expect(result.graph.edges.length).toBe(3);
     expect(result.strokes[0].retraceLength).toBe(0);
     expect(result.coverage.mask >= 0.95).toBe(true);
+    expect(result.graph.edges.some((edge) => edge.completed)).toBe(false);
+  });
+
+  it('flags graph edges added by coverage completion', () => {
+    const { raster } = loadBundledMnistSamples().find(
+      (sample) => sample.index === 36
+    );
+    const result = vectorizeRasterLine(raster);
+    const completed = result.graph.edges.filter((edge) => edge.completed);
+
+    expect(completed.length >= 1).toBe(true);
+    expect(completed.every((edge) => edge.points.length >= 2)).toBe(true);
+    expectFullyDrawn(result);
   });
 
   it('exports the stroke graph as parseable Links Notation', () => {

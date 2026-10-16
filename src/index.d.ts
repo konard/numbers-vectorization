@@ -65,6 +65,8 @@ export interface StrokeGraph {
     length: number;
     points: VectorPoint[];
     pixels: number[];
+    /** Added by coverage completion rather than traced from the skeleton. */
+    completed: boolean;
   }[];
 }
 

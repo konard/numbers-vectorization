@@ -96,6 +96,7 @@ function describeGraph(store) {
         length: roundNumber(data.length),
         points: data.simplified,
         pixels: [...data.pixels],
+        completed: Boolean(data.completed),
       };
     }),
   };
