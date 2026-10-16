@@ -1,0 +1,5 @@
+docker build -t numbers-vectorization:issue-5 . && docker run -p 3305:3000 ...; curl /health; curl --data-binary @examples/images/mnist-8.png /vectorize?format=path
+e6c37d3d49b2d0a9a56310d7b8748e971e25d91bf5cf873b30009287341a20c6
+{"status":"ok","name":"@link-foundation/example-package-name","version":"0.12.1"}
+M 19.5 7.5 L 19.5 9.5 L 16.5 13.5 L 13 15 L 12.5 16.5 L 9.5 18.5 L 8.5 22.5 L 9.5 23.5 L 11.5 22.5 L 14.5 20.5 L 14.5 18.5 L 13 15 L 12.5 8.5 L 19.5 7.5 L 21.03 5.97
+nv5

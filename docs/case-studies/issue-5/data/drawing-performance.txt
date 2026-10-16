@@ -1,0 +1,6 @@
+canvas eight 235 ms pen=17.5 strokes=1 edges=3/3 completed=0 mask=0.991 retrace=0
+canvas four 111 ms pen=19.5 strokes=1 edges=4/4 completed=0 mask=0.995 retrace=121.25
+eight x1 24 ms pen=6.711 strokes=1 edges=3/3 completed=0 mask=0.999 retrace=0
+eight x1.5 34 ms pen=9.698 strokes=1 edges=3/3 completed=0 mask=0.989 retrace=0
+eight x2 57 ms pen=13.642 strokes=1 edges=3/3 completed=0 mask=0.991 retrace=0
+eight x3 113 ms pen=20.091 strokes=1 edges=3/3 completed=0 mask=0.982 retrace=0
