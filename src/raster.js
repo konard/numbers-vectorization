@@ -59,6 +59,88 @@ function isRgbaPixelActive(pixels, offset, options) {
   return luminance <= threshold;
 }
 
+function luminanceSamples(raster, pixels, alphaThreshold) {
+  const pixelCount = raster.width * raster.height;
+
+  if (pixels.length !== pixelCount * 4) {
+    return { values: Array.from(pixels), transparent: 0 };
+  }
+
+  const values = [];
+  let transparent = 0;
+
+  for (let offset = 0; offset < pixels.length; offset += 4) {
+    if ((pixels[offset + 3] ?? 255) < alphaThreshold) {
+      transparent += 1;
+    } else {
+      values.push(
+        (pixels[offset] + pixels[offset + 1] + pixels[offset + 2]) / 3
+      );
+    }
+  }
+
+  return { values, transparent };
+}
+
+/**
+ * Otsu's method: the threshold that maximizes the between-class variance of
+ * the 0..255 luminance histogram. Values `<= threshold` form the dark class.
+ */
+export function otsuThreshold(values) {
+  const histogram = new Float64Array(256);
+  values.forEach((value) => {
+    histogram[Math.max(0, Math.min(255, Math.round(value)))] += 1;
+  });
+  const total = values.length;
+  const sum = histogram.reduce((acc, count, level) => acc + count * level, 0);
+  let darkCount = 0;
+  let darkSum = 0;
+  let best = { threshold: 127, variance: -1 };
+
+  for (let level = 0; level < 255; level += 1) {
+    darkCount += histogram[level];
+    darkSum += histogram[level] * level;
+    const lightCount = total - darkCount;
+
+    if (darkCount === 0 || lightCount === 0) {
+      continue;
+    }
+
+    const difference = darkSum / darkCount - (sum - darkSum) / lightCount;
+    const variance = darkCount * lightCount * difference * difference;
+
+    if (variance > best.variance) {
+      best = { threshold: level, variance };
+    }
+  }
+
+  return best.threshold;
+}
+
+function resolveAutoOptions(raster, pixels, options) {
+  if (options.foreground !== 'auto') {
+    return options;
+  }
+
+  const alphaThreshold = options.alphaThreshold ?? DEFAULT_ALPHA_THRESHOLD;
+  const { values, transparent } = luminanceSamples(
+    raster,
+    pixels,
+    alphaThreshold
+  );
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  // Transparent canvases hold ink in their opaque pixels; otherwise the
+  // background is the majority, so a light image means dark ink.
+  const foreground = transparent > 0 || !(mean < 128) ? 'dark' : 'light';
+  const split = options.threshold ?? otsuThreshold(values);
+  const threshold =
+    options.threshold === undefined && foreground === 'light'
+      ? split + 1
+      : split;
+
+  return { ...options, foreground, threshold };
+}
+
 /**
  * Convert a grayscale, binary, or RGBA raster into a 0/1 foreground mask.
  *
@@ -67,16 +149,21 @@ function isRgbaPixelActive(pixels, offset, options) {
  * dark-stroke semantics by default because browser pencil input is normally
  * rasterized as dark ink on transparent canvas.
  *
+ * Pass `foreground: 'auto'` for images of unknown polarity (scans, PNG files):
+ * the ink polarity is then detected from the mean luminance and, unless a
+ * threshold is given, the threshold is chosen with Otsu's method.
+ *
  * @param {{ width: number, height: number, pixels?: ArrayLike<number>,
  * data?: ArrayLike<number> }} raster - Raster image data.
  * @param {{ threshold?: number, alphaThreshold?: number,
- * foreground?: 'dark' | 'light' }} [options] - Thresholding options.
+ * foreground?: 'dark' | 'light' | 'auto' }} [options] - Thresholding options.
  * @returns {Uint8Array} Binary mask in row-major order.
  */
-export function rasterToMask(raster, options = {}) {
+export function rasterToMask(raster, rawOptions = {}) {
   const pixels = assertRasterShape(raster);
   const pixelCount = raster.width * raster.height;
   const mask = new Uint8Array(pixelCount);
+  const options = resolveAutoOptions(raster, pixels, rawOptions);
 
   if (pixels.length === pixelCount * 4) {
     for (let index = 0; index < pixelCount; index += 1) {

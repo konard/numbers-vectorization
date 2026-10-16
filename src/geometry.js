@@ -1,5 +1,6 @@
 export const DEFAULT_SIMPLIFY_TOLERANCE = 0.85;
 const CORNER_ANGLE = 40;
+const CORNER_SPAN = 3;
 
 export function distanceBetween(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -107,26 +108,79 @@ export function angleBetween(a, b) {
   return (Math.acos(cosine) * 180) / Math.PI;
 }
 
+function pointAtArc(points, index, step, span) {
+  let travelled = 0;
+  let cursor = index;
+
+  while (cursor + step >= 0 && cursor + step < points.length) {
+    travelled += distanceBetween(points[cursor], points[cursor + step]);
+    cursor += step;
+
+    if (travelled >= span) {
+      break;
+    }
+  }
+
+  return points[cursor];
+}
+
 /**
- * Simplify a polyline with RDP while keeping every sharp corner (turns of at
- * least 40 degrees) as a fixed vertex, so right angles survive simplification.
+ * Turning angle at every point, measured between the chords to the points
+ * `span` pixels before and after it. Unlike the angle between adjacent
+ * pixels this ignores the 90-degree steps of pixel staircases.
+ */
+function chordAngles(points, span) {
+  return points.map((point, index) => {
+    if (index === 0 || index === points.length - 1) {
+      return 0;
+    }
+
+    return turnAngle(
+      pointAtArc(points, index, -1, span),
+      point,
+      pointAtArc(points, index, 1, span)
+    );
+  });
+}
+
+/**
+ * Corners are local maxima of the chord angle that reach `CORNER_ANGLE`.
+ */
+function findCorners(points, span) {
+  const angles = chordAngles(points, span);
+  const corners = [];
+
+  angles.forEach((angle, index) => {
+    if (angle < CORNER_ANGLE) {
+      return;
+    }
+
+    const last = corners.at(-1);
+    const near =
+      last !== undefined &&
+      polylineLength(points.slice(last, index + 1)) < span;
+
+    if (!near) {
+      corners.push(index);
+    } else if (angle > angles[last]) {
+      corners[corners.length - 1] = index;
+    }
+  });
+
+  return corners;
+}
+
+/**
+ * Simplify a centerline with RDP while keeping every sharp corner (turns of
+ * at least 40 degrees over a `CORNER_SPAN` pixel window) as a fixed vertex, so
+ * right angles survive simplification but pixel staircases do not.
  */
 export function simplifyCenterline(points, tolerance) {
   if (points.length <= 2) {
     return [...points];
   }
 
-  const cornerIndices = [0];
-
-  for (let index = 1; index < points.length - 1; index += 1) {
-    if (
-      turnAngle(points[index - 1], points[index], points[index + 1]) >=
-      CORNER_ANGLE
-    ) {
-      cornerIndices.push(index);
-    }
-  }
-
+  const cornerIndices = [0, ...findCorners(points, CORNER_SPAN)];
   cornerIndices.push(points.length - 1);
 
   const simplified = [];
