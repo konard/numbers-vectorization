@@ -1,7 +1,7 @@
-import { pointSegmentDistance, polylineLength } from './geometry.js';
+import { polylineLength } from './geometry.js';
 import { labelComponents } from './raster.js';
+import { isReached, segmentGrid } from './segment-grid.js';
 
-const CELL_SIZE = 4;
 const MAX_BRANCHES = 24;
 const STEPS = [
   [1, 0, 1],
@@ -18,39 +18,50 @@ function pixelCenter(index, width) {
   return { x: (index % width) + 0.5, y: Math.floor(index / width) + 0.5 };
 }
 
+/** Binary min-heap of (priority, value) pairs kept in two parallel arrays. */
 class MinHeap {
   constructor() {
-    this.items = [];
+    this.priorities = [];
+    this.values = [];
   }
 
   get size() {
-    return this.items.length;
+    return this.values.length;
+  }
+
+  swap(i, j) {
+    const { priorities, values } = this;
+    [priorities[i], priorities[j]] = [priorities[j], priorities[i]];
+    [values[i], values[j]] = [values[j], values[i]];
   }
 
   push(priority, value) {
-    const { items } = this;
-    items.push([priority, value]);
-    let index = items.length - 1;
+    const { priorities } = this;
+    priorities.push(priority);
+    this.values.push(value);
+    let index = priorities.length - 1;
 
     while (index > 0) {
       const parent = (index - 1) >> 1;
 
-      if (items[parent][0] <= items[index][0]) {
+      if (priorities[parent] <= priorities[index]) {
         break;
       }
 
-      [items[parent], items[index]] = [items[index], items[parent]];
+      this.swap(parent, index);
       index = parent;
     }
   }
 
   pop() {
-    const { items } = this;
-    const top = items[0];
-    const last = items.pop();
+    const { priorities, values } = this;
+    const top = [priorities[0], values[0]];
+    const lastPriority = priorities.pop();
+    const lastValue = values.pop();
 
-    if (items.length > 0) {
-      items[0] = last;
+    if (values.length > 0) {
+      priorities[0] = lastPriority;
+      values[0] = lastValue;
       let index = 0;
 
       for (;;) {
@@ -58,11 +69,11 @@ class MinHeap {
         const right = left + 1;
         let smallest = index;
 
-        if (left < items.length && items[left][0] < items[smallest][0]) {
+        if (left < values.length && priorities[left] < priorities[smallest]) {
           smallest = left;
         }
 
-        if (right < items.length && items[right][0] < items[smallest][0]) {
+        if (right < values.length && priorities[right] < priorities[smallest]) {
           smallest = right;
         }
 
@@ -70,7 +81,7 @@ class MinHeap {
           break;
         }
 
-        [items[smallest], items[index]] = [items[index], items[smallest]];
+        this.swap(smallest, index);
         index = smallest;
       }
     }
@@ -100,52 +111,6 @@ function graphSegments(store) {
   });
 
   return segments;
-}
-
-/** Bucket segments into a coarse grid so distance queries stay local. */
-function segmentGrid(segments, width, height, margin) {
-  const columns = Math.ceil(width / CELL_SIZE);
-  const rows = Math.ceil(height / CELL_SIZE);
-  const cells = Array.from({ length: columns * rows }, () => []);
-  const clamp = (value, limit) => Math.max(0, Math.min(limit - 1, value));
-
-  segments.forEach((segment) => {
-    const [a, b] = segment;
-    const left = clamp(
-      Math.floor((Math.min(a.x, b.x) - margin) / CELL_SIZE),
-      columns
-    );
-    const right = clamp(
-      Math.floor((Math.max(a.x, b.x) + margin) / CELL_SIZE),
-      columns
-    );
-    const top = clamp(
-      Math.floor((Math.min(a.y, b.y) - margin) / CELL_SIZE),
-      rows
-    );
-    const bottom = clamp(
-      Math.floor((Math.max(a.y, b.y) + margin) / CELL_SIZE),
-      rows
-    );
-
-    for (let row = top; row <= bottom; row += 1) {
-      for (let column = left; column <= right; column += 1) {
-        cells[row * columns + column].push(segment);
-      }
-    }
-  });
-
-  return { cells, columns };
-}
-
-function isReached(point, grid, reach) {
-  const cell =
-    Math.floor(point.y / CELL_SIZE) * grid.columns +
-    Math.floor(point.x / CELL_SIZE);
-
-  return grid.cells[cell].some(
-    ([a, b]) => pointSegmentDistance(point, a, b) <= reach
-  );
 }
 
 function uncoveredMask(store, input, reach) {
@@ -315,7 +280,8 @@ function splitEdge(store, edge, index, width) {
 }
 
 function attachBranch(store, anchor, pixels, width, halfWidth) {
-  const node = anchor.node ?? splitEdge(store, anchor.edge, anchor.index);
+  const node =
+    anchor.node ?? splitEdge(store, anchor.edge, anchor.index, width);
   const { x, y } = store.getData(node);
   const raw = [{ x, y }, ...pixels.slice(1).map((p) => pixelCenter(p, width))];
   const points = trimEnd(raw, halfWidth - 0.5);
@@ -335,25 +301,46 @@ function attachBranch(store, anchor, pixels, width, halfWidth) {
   });
 }
 
-function pickTarget(components, deep, cost) {
-  let best = null;
+function geodesicPath(previous, target) {
+  const pixels = [target];
 
-  for (const { pixels } of components) {
-    if (!pixels.some((pixel) => deep[pixel] === 1)) {
+  while (previous[pixels.at(-1)] !== -1) {
+    pixels.push(previous[pixels.at(-1)]);
+  }
+
+  return pixels.reverse();
+}
+
+/**
+ * Pick the largest uncovered blob that a worthwhile branch can reach: the
+ * blob must contain ink missed by a clear margin, and the branch to its
+ * farthest pixel must stay longer than half the pen radius once its tip is
+ * pulled back inside the ink. Shorter branches only add a U-turn on the spot, which
+ * is what the wide overlap of two crossing thick strokes would otherwise get.
+ */
+function pickBranch(components, deep, geodesics, width, halfWidth) {
+  const { cost, previous } = geodesics;
+  const minimum = Math.max(1, halfWidth / 2) + Math.max(0, halfWidth - 0.5);
+  const candidates = components
+    .filter(({ pixels }) => pixels.some((pixel) => deep[pixel] === 1))
+    .sort((a, b) => b.pixels.length - a.pixels.length);
+
+  for (const { pixels } of candidates) {
+    const far = pixels.reduce((a, b) => (cost[b] > cost[a] ? b : a));
+
+    if (!Number.isFinite(cost[far])) {
       continue;
     }
 
-    const far = pixels.reduce((a, b) => (cost[b] > cost[a] ? b : a));
+    const path = geodesicPath(previous, far);
+    const length = polylineLength(path.map((p) => pixelCenter(p, width)));
 
-    if (
-      Number.isFinite(cost[far]) &&
-      (best === null || pixels.length > best.size)
-    ) {
-      best = { pixel: far, size: pixels.length };
+    if (length >= minimum) {
+      return path;
     }
   }
 
-  return best?.pixel;
+  return undefined;
 }
 
 /**
@@ -375,20 +362,13 @@ export function completeCoverage(store, input) {
     const deep = uncoveredMask(store, input, depth);
     const { components } = labelComponents(uncovered, width, height);
     const anchors = graphAnchors(store, width);
-    const { cost, previous } = medialGeodesics(input, anchors);
-    const target = pickTarget(components, deep, cost);
+    const geodesics = medialGeodesics(input, anchors);
+    const pixels = pickBranch(components, deep, geodesics, width, halfWidth);
 
-    if (target === undefined) {
+    if (pixels === undefined) {
       return;
     }
 
-    const pixels = [target];
-
-    while (previous[pixels.at(-1)] !== -1) {
-      pixels.push(previous[pixels.at(-1)]);
-    }
-
-    pixels.reverse();
     attachBranch(store, anchors.get(pixels[0]), pixels, width, halfWidth);
   }
 }

@@ -1,4 +1,5 @@
-import { pointSegmentDistance, roundNumber } from './geometry.js';
+import { roundNumber } from './geometry.js';
+import { isReached, segmentGrid } from './segment-grid.js';
 
 function toSegments(strokes) {
   return strokes.flatMap((points) =>
@@ -8,40 +9,19 @@ function toSegments(strokes) {
   );
 }
 
-function distanceToSegments(point, segments, limit) {
-  let best = Infinity;
-
-  for (const [start, end] of segments) {
-    if (
-      Math.min(start.x, end.x) - limit > point.x ||
-      Math.max(start.x, end.x) + limit < point.x ||
-      Math.min(start.y, end.y) - limit > point.y ||
-      Math.max(start.y, end.y) + limit < point.y
-    ) {
-      continue;
-    }
-
-    best = Math.min(best, pointSegmentDistance(point, start, end));
-
-    if (best <= limit) {
-      return best;
-    }
-  }
-
-  return best;
-}
-
-function coveredRatio(pixels, width, segments, tolerance) {
+function coveredRatio(pixels, raster, segments, tolerance) {
   if (pixels.length === 0) {
     return { ratio: 1, uncovered: [] };
   }
 
+  const { width, height } = raster;
+  const grid = segmentGrid(segments, width, height, tolerance);
   const uncovered = pixels.filter((index) => {
     const point = {
       x: (index % width) + 0.5,
       y: Math.floor(index / width) + 0.5,
     };
-    return distanceToSegments(point, segments, tolerance) > tolerance;
+    return !isReached(point, grid, tolerance);
   });
 
   return {
@@ -106,13 +86,13 @@ export function measureCoverage(input, strokes) {
   const halfWidth = strokeWidth / 2;
   const skeletonCoverage = coveredRatio(
     activePixels(skeleton),
-    width,
+    input,
     segments,
     Math.max(1, halfWidth) + 0.5
   );
   const maskCoverage = coveredRatio(
     activePixels(mask),
-    width,
+    input,
     segments,
     halfWidth + Math.SQRT1_2
   );

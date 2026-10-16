@@ -188,21 +188,42 @@ const FOUR_OFFSETS = [
 ];
 const EIGHT_OFFSETS = [...FOUR_OFFSETS, [1, -1], [1, 1], [-1, 1], [-1, -1]];
 
-function isBorderPixel(index, width, height) {
-  const x = index % width;
-  const y = (index - x) / width;
+/** Flood-fill one component from `seed`, writing `label` into `labels`. */
+function floodComponent(input, seed, label) {
+  const { mask, labels, width, height, value, offsets } = input;
+  const pixels = [seed];
+  let touchesBorder = false;
+  labels[seed] = label;
 
-  return x === 0 || y === 0 || x === width - 1 || y === height - 1;
-}
+  for (let cursor = 0; cursor < pixels.length; cursor += 1) {
+    const pixel = pixels[cursor];
+    const x = pixel % width;
+    const y = (pixel - x) / width;
 
-function inBoundsNeighbors(index, width, height, offsets) {
-  const x = index % width;
-  const y = (index - x) / width;
+    if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
+      touchesBorder = true;
+    }
 
-  return offsets
-    .map(([dx, dy]) => [x + dx, y + dy])
-    .filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < width && ny < height)
-    .map(([nx, ny]) => ny * width + nx);
+    for (const [dx, dy] of offsets) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const neighbor = ny * width + nx;
+
+      if (
+        nx >= 0 &&
+        ny >= 0 &&
+        nx < width &&
+        ny < height &&
+        mask[neighbor] === value &&
+        labels[neighbor] === 0
+      ) {
+        labels[neighbor] = label;
+        pixels.push(neighbor);
+      }
+    }
+  }
+
+  return { pixels, touchesBorder };
 }
 
 /**
@@ -218,35 +239,12 @@ export function labelComponents(mask, width, height, options = {}) {
   const labels = new Int32Array(mask.length);
   const components = [];
 
+  const input = { mask, labels, width, height, value, offsets };
+
   for (let seed = 0; seed < mask.length; seed += 1) {
-    if (mask[seed] !== value || labels[seed] !== 0) {
-      continue;
+    if (mask[seed] === value && labels[seed] === 0) {
+      components.push(floodComponent(input, seed, components.length + 1));
     }
-
-    const label = components.length + 1;
-    const pixels = [seed];
-    labels[seed] = label;
-
-    for (let cursor = 0; cursor < pixels.length; cursor += 1) {
-      for (const neighbor of inBoundsNeighbors(
-        pixels[cursor],
-        width,
-        height,
-        offsets
-      )) {
-        if (mask[neighbor] === value && labels[neighbor] === 0) {
-          labels[neighbor] = label;
-          pixels.push(neighbor);
-        }
-      }
-    }
-
-    components.push({
-      pixels,
-      touchesBorder: pixels.some((index) =>
-        isBorderPixel(index, width, height)
-      ),
-    });
   }
 
   return { labels, components };

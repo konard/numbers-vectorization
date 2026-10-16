@@ -3,7 +3,12 @@ import { Parser } from 'links-notation';
 
 import { LinksStore, planStrokes, vectorizeRasterLine } from '../src/index.js';
 import { loadBundledMnistSamples } from './helpers/mnist-samples.js';
-import { SHAPES, rasterFromRows } from './helpers/shapes.js';
+import {
+  SHAPES,
+  circlePoints,
+  penRaster,
+  rasterFromRows,
+} from './helpers/shapes.js';
 
 function vectorizeShape(name, options) {
   return vectorizeRasterLine(rasterFromRows(SHAPES[name]), options);
@@ -102,6 +107,23 @@ describe('stroke graph traversal (issue 5)', () => {
     expect(linear.path.includes(' C ')).toBe(false);
     expect(smooth.path.includes(' C ')).toBe(true);
     expect(smooth.path.startsWith(linear.path.split(' L ')[0])).toBe(true);
+  });
+
+  it('adds no U-turn stubs where two thick pen loops overlap', () => {
+    // A hand-drawn 8 at web-canvas scale: the loops overlap in a wide blob of
+    // ink, which must not be "completed" with short dead-end branches.
+    const raster = penRaster(
+      200,
+      200,
+      [circlePoints(100, 60, 36), circlePoints(100, 136, 44)],
+      7
+    );
+    const result = vectorizeRasterLine(raster);
+
+    expect(result.strokes.length).toBe(1);
+    expect(result.graph.edges.length).toBe(3);
+    expect(result.strokes[0].retraceLength).toBe(0);
+    expect(result.coverage.mask >= 0.95).toBe(true);
   });
 
   it('exports the stroke graph as parseable Links Notation', () => {
