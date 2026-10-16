@@ -74,7 +74,7 @@ h1 {
 
 .mode-tabs {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(84px, 1fr));
+  grid-template-columns: repeat(3, minmax(84px, 1fr));
   overflow: hidden;
   border: 1px solid #bec9d1;
   border-radius: 8px;
@@ -251,7 +251,7 @@ h1 {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(74px, 1fr));
+  grid-template-columns: repeat(4, minmax(96px, 1fr));
   gap: 8px;
   min-width: min(100%, 640px);
   margin: 0;
@@ -327,6 +327,7 @@ h1 {
 }
 
 .raster-preview {
+  object-fit: contain;
   image-rendering: pixelated;
 }
 
@@ -353,6 +354,184 @@ h1 {
 
 .vector-output path {
   stroke: #101820;
+}
+
+.curve-tabs {
+  display: grid;
+  width: 100%;
+}
+
+.curve-tabs .mode-tab {
+  min-height: 36px;
+}
+
+.settings-note {
+  margin: 0;
+  color: #4c5b66;
+  font-size: 0.85rem;
+}
+
+.settings-error {
+  color: #a23b2c;
+  font-weight: 800;
+}
+
+.upload-control {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 10px;
+  border: 1px dashed #9fb1be;
+  border-radius: 8px;
+  padding: 16px;
+  color: #31404c;
+  background: #f7fafc;
+  font-size: 0.88rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.upload-control input {
+  max-width: 100%;
+}
+
+.graph-view,
+.replay-view {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  justify-items: center;
+}
+
+.graph-edge {
+  stroke: #255f85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.graph-edge-retraced {
+  stroke: #b84d3e;
+}
+
+.graph-edge-completed {
+  stroke: #2f8068;
+}
+
+.graph-node {
+  fill: #ffffff;
+  stroke: #31404c;
+  stroke-width: 0.3;
+}
+
+.graph-node-end {
+  fill: #255f85;
+}
+
+.graph-node-junction {
+  fill: #b7791f;
+}
+
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  color: #4c5b66;
+  font-size: 0.75rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.graph-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.graph-legend span {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.legend-end {
+  background: #255f85;
+}
+
+.legend-junction {
+  background: #b7791f;
+}
+
+.legend-start {
+  border: 2px solid #255f85;
+}
+
+.legend-retraced,
+.legend-completed {
+  height: 3px !important;
+  border-radius: 0 !important;
+}
+
+.legend-retraced {
+  background: repeating-linear-gradient(
+    90deg,
+    #b84d3e 0 4px,
+    transparent 4px 6px
+  );
+}
+
+.legend-completed {
+  background: #2f8068;
+}
+
+.replay-ghost {
+  stroke: #dfe6eb;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.replay-path {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation-name: draw-stroke;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.replay-starts {
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 0.25em;
+}
+
+@keyframes draw-stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .replay-path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+.lino-output {
+  width: 100%;
+  max-height: 300px;
+  margin: 0;
+  overflow: auto;
+  color: #1b242c;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 button:focus-visible,

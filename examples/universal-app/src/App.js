@@ -14,11 +14,27 @@ import {
   MNIST_SAMPLE_PIXELS_BASE64,
   MNIST_SAMPLE_WIDTH,
 } from './mnistSamples.js';
+import { IMAGE_SIZE, ImageInput } from './ImageInput.js';
+import { LinoView, StrokeGraphView, StrokeReplay } from './StrokeViews.js';
 
 const DRAWING_SIZE = 280;
 const EMPTY_DRAWING_PIXELS = new Uint8ClampedArray(
   DRAWING_SIZE * DRAWING_SIZE * 4
 );
+const EMPTY_IMAGE_RASTER = {
+  width: IMAGE_SIZE,
+  height: IMAGE_SIZE,
+  pixels: new Uint8ClampedArray(IMAGE_SIZE * IMAGE_SIZE * 4),
+};
+const MODES = [
+  ['mnist', 'MNIST'],
+  ['draw', 'Draw'],
+  ['image', 'Image'],
+];
+const CURVES = [
+  ['linear', 'Linear'],
+  ['smooth', 'Smooth'],
+];
 
 function decodeBase64Bytes(value) {
   const binary = globalThis.atob(value);
@@ -100,22 +116,27 @@ function RasterCanvas({ raster, className, title }) {
   });
 }
 
-function ModeTabs({ mode, onModeChange }) {
+function SegmentedControl({ label, options, value, onChange, className }) {
   return h(
     'div',
-    { className: 'mode-tabs', role: 'tablist', 'aria-label': 'Input source' },
-    ['mnist', 'draw'].map((value) =>
+    {
+      className: `mode-tabs ${className ?? ''}`.trim(),
+      role: 'radiogroup',
+      'aria-label': label,
+      style: { gridTemplateColumns: `repeat(${options.length}, 1fr)` },
+    },
+    options.map(([option, text]) =>
       h(
         'button',
         {
-          key: value,
+          key: option,
           type: 'button',
-          className: value === mode ? 'mode-tab mode-tab-active' : 'mode-tab',
-          role: 'tab',
-          'aria-selected': value === mode,
-          onClick: () => onModeChange(value),
+          className: option === value ? 'mode-tab mode-tab-active' : 'mode-tab',
+          role: 'radio',
+          'aria-checked': option === value,
+          onClick: () => onChange(option),
         },
-        value === 'mnist' ? 'MNIST' : 'Draw'
+        text
       )
     )
   );
@@ -384,17 +405,35 @@ function DrawingCanvas({ raster, onRasterChange }) {
   );
 }
 
-function Metrics({ result, activeSample, mode }) {
-  const sourceLabel =
-    mode === 'mnist'
-      ? `MNIST ${activeSample.index} / digit ${activeSample.label}`
-      : 'Drawn raster';
+function percent(value) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function sourceLabel(mode, activeSample, imageName) {
+  if (mode === 'mnist') {
+    return `MNIST ${activeSample.index} / digit ${activeSample.label}`;
+  }
+
+  return mode === 'draw' ? 'Drawn raster' : imageName || 'No image yet';
+}
+
+function Metrics({ result, source }) {
+  const retrace = result.strokes.reduce(
+    (sum, stroke) => sum + stroke.retraceLength,
+    0
+  );
   const metrics = [
-    ['Source', sourceLabel],
-    ['Foreground', foregroundCount(result.mask)],
-    ['Skeleton', foregroundCount(result.skeleton)],
+    ['Source', source],
+    ['Strokes', result.strokes.length],
+    [
+      'Graph',
+      `${result.graph.nodes.length} n / ${result.graph.edges.length} e`,
+    ],
+    ['Retrace', `${retrace.toFixed(1)} px`],
+    ['Ink covered', percent(result.coverage.mask)],
+    ['Skeleton covered', percent(result.coverage.skeleton)],
     ['Points', result.points.length],
-    ['Stroke', result.strokeWidth.toFixed(2)],
+    ['Pen', `${result.strokeWidth.toFixed(2)} px`],
   ];
 
   return h(
@@ -411,27 +450,103 @@ function Metrics({ result, activeSample, mode }) {
   );
 }
 
+function ControlInput({
+  mode,
+  samples,
+  selectedIndex,
+  onSelect,
+  drawing,
+  image,
+}) {
+  if (mode === 'mnist') {
+    return h(SampleGrid, { samples, selectedIndex, onSelect });
+  }
+
+  return mode === 'draw' ? h(DrawingCanvas, drawing) : h(ImageInput, image);
+}
+
+function vectorizationOptions(mode, settings) {
+  const common = {
+    alphaThreshold: 24,
+    simplifyTolerance: settings.tolerance,
+    curve: settings.curve,
+  };
+
+  return mode === 'image'
+    ? { ...common, foreground: 'auto' }
+    : { ...common, threshold: settings.threshold };
+}
+
+function ResultPanels({ result, activeRaster, curve }) {
+  const panels = [
+    [
+      'Raster',
+      `${activeRaster.width} x ${activeRaster.height}`,
+      h(RasterCanvas, {
+        raster: activeRaster,
+        className: 'raster-preview',
+        title: 'Input raster',
+      }),
+    ],
+    [
+      'Skeleton',
+      `${foregroundCount(result.skeleton)} px`,
+      h(SkeletonView, { result }),
+    ],
+    [
+      'Stroke graph',
+      `${result.graph.nodes.length} nodes, ${result.graph.edges.length} edges`,
+      h(StrokeGraphView, { result }),
+    ],
+    [
+      'Stroke order',
+      `${result.strokes.length} strokes`,
+      h(StrokeReplay, { result, curve }),
+    ],
+    ['SVG', `${result.points.length} pts`, h(VectorView, { result })],
+    [
+      'Links Notation',
+      `${result.lino.split('\n').length} links`,
+      h(LinoView, { result }),
+    ],
+  ];
+
+  return h(
+    'div',
+    { className: 'analysis-grid' },
+    panels.map(([title, meta, body]) =>
+      h(AnalysisPanel, { key: title, title, meta }, body)
+    )
+  );
+}
+
 export function App() {
   const samples = useMemo(decodeMnistSamples, []);
   const [mode, setMode] = useState('mnist');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [threshold, setThreshold] = useState(32);
   const [tolerance, setTolerance] = useState(0.85);
+  const [curve, setCurve] = useState('linear');
   const [drawingRaster, setDrawingRaster] = useState({
     width: DRAWING_SIZE,
     height: DRAWING_SIZE,
     pixels: new Uint8ClampedArray(EMPTY_DRAWING_PIXELS),
   });
+  const [image, setImage] = useState({ raster: EMPTY_IMAGE_RASTER, name: '' });
+  const handleImageChange = useCallback(
+    (raster, name) => setImage({ raster, name }),
+    []
+  );
   const activeSample = samples[selectedIndex];
-  const activeRaster = mode === 'mnist' ? activeSample : drawingRaster;
+  const activeRaster =
+    { mnist: activeSample, draw: drawingRaster }[mode] ?? image.raster;
+  const options = useMemo(
+    () => vectorizationOptions(mode, { threshold, tolerance, curve }),
+    [mode, threshold, tolerance, curve]
+  );
   const result = useMemo(
-    () =>
-      vectorizeRasterLine(activeRaster, {
-        alphaThreshold: 24,
-        simplifyTolerance: tolerance,
-        threshold,
-      }),
-    [activeRaster, threshold, tolerance]
+    () => vectorizeRasterLine(activeRaster, options),
+    [activeRaster, options]
   );
 
   return h(
@@ -443,10 +558,15 @@ export function App() {
       h(
         'div',
         null,
-        h('p', { className: 'eyebrow' }, 'CPU raster to SVG'),
+        h('p', { className: 'eyebrow' }, 'CPU raster to SVG pen strokes'),
         h('h1', null, 'Numbers Vectorization')
       ),
-      h(ModeTabs, { mode, onModeChange: setMode })
+      h(SegmentedControl, {
+        label: 'Input source',
+        options: MODES,
+        value: mode,
+        onChange: setMode,
+      })
     ),
     h(
       'div',
@@ -454,16 +574,14 @@ export function App() {
       h(
         'aside',
         { className: 'control-column' },
-        mode === 'mnist'
-          ? h(SampleGrid, {
-              samples,
-              selectedIndex,
-              onSelect: setSelectedIndex,
-            })
-          : h(DrawingCanvas, {
-              raster: drawingRaster,
-              onRasterChange: setDrawingRaster,
-            }),
+        h(ControlInput, {
+          mode,
+          samples,
+          selectedIndex,
+          onSelect: setSelectedIndex,
+          drawing: { raster: drawingRaster, onRasterChange: setDrawingRaster },
+          image: { name: image.name, onImageChange: handleImageChange },
+        }),
         h(
           'section',
           {
@@ -475,15 +593,21 @@ export function App() {
             { className: 'section-header' },
             h('h2', { id: 'settings-title' }, 'Settings')
           ),
-          h(RangeControl, {
-            id: 'threshold',
-            label: 'Threshold',
-            min: 1,
-            max: 240,
-            step: 1,
-            value: threshold,
-            onChange: setThreshold,
-          }),
+          mode === 'image'
+            ? h(
+                'p',
+                { className: 'settings-note' },
+                'Threshold: automatic (Otsu)'
+              )
+            : h(RangeControl, {
+                id: 'threshold',
+                label: 'Threshold',
+                min: 1,
+                max: 240,
+                step: 1,
+                value: threshold,
+                onChange: setThreshold,
+              }),
           h(RangeControl, {
             id: 'tolerance',
             label: 'Simplify',
@@ -492,7 +616,19 @@ export function App() {
             step: 0.05,
             value: tolerance,
             onChange: setTolerance,
-          })
+          }),
+          h(
+            'div',
+            { className: 'range-control' },
+            h('span', null, h('span', null, 'Curve')),
+            h(SegmentedControl, {
+              label: 'Curve',
+              options: CURVES,
+              value: curve,
+              onChange: setCurve,
+              className: 'curve-tabs',
+            })
+          )
         )
       ),
       h(
@@ -502,40 +638,12 @@ export function App() {
           'div',
           { className: 'result-header' },
           h('h2', { id: 'result-title' }, 'Vectorization'),
-          h(Metrics, { result, activeSample, mode })
+          h(Metrics, {
+            result,
+            source: sourceLabel(mode, activeSample, image.name),
+          })
         ),
-        h(
-          'div',
-          { className: 'analysis-grid' },
-          h(
-            AnalysisPanel,
-            {
-              title: 'Raster',
-              meta: `${activeRaster.width} x ${activeRaster.height}`,
-            },
-            h(RasterCanvas, {
-              raster: activeRaster,
-              className: 'raster-preview',
-              title: 'Input raster',
-            })
-          ),
-          h(
-            AnalysisPanel,
-            {
-              title: 'Skeleton',
-              meta: `${foregroundCount(result.skeleton)} px`,
-            },
-            h(SkeletonView, { result })
-          ),
-          h(
-            AnalysisPanel,
-            {
-              title: 'SVG',
-              meta: `${result.points.length} pts`,
-            },
-            h(VectorView, { result })
-          )
-        )
+        h(ResultPanels, { result, activeRaster, curve })
       )
     )
   );
