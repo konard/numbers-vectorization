@@ -55,6 +55,7 @@ describe('CI timeout policy', () => {
       'changeset-check': 10,
       lint: 10,
       test: 10,
+      'docker-build': 15,
       'validate-docs': 5,
       release: 30,
       'instant-release': 30,

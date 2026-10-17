@@ -1,27 +1,49 @@
 # numbers-vectorization
 
-A JavaScript package and browser demo for reconstructing a single handwritten
-raster stroke as an SVG centerline path.
+A dependency-free JavaScript library, CLI, HTTP API, Docker image and
+browser demo that turns raster handwriting (MNIST digits, canvas drawings,
+photos and scans) into SVG **pen strokes**: centerlines with a pen width and a
+drawing order.
 
-The first implementation targets MNIST-sized digit rasters and Apple
-Pencil-style browser input. It does not classify digits; it thresholds raster
-pixels, thins the foreground mask to a centerline, extracts the longest
-endpoint path, simplifies the path, and emits an SVG document with an estimated
-stroke width.
+The vectorizer handles every path a digit can need:
+
+- closed **loops** (0, 6, 8, 9);
+- **U-turns**, where the pen walks out to a tip and back (the arm of a 3, the
+  stem of a 4);
+- junctions and crossings;
+- separate strokes and dots.
+
+It thresholds the image, thins it to a skeleton and builds a stroke graph in
+a doublet links store. It then plans a minimum-retrace pen route (Chinese
+postman + Euler trail). All 50 bundled MNIST samples are fully drawn: every
+skeleton branch is covered. See the
+[issue #5 case study](docs/case-studies/issue-5/README.md) for the algorithm,
+the research behind it and before/after measurements.
+
+![Web app: MNIST 8 vectorized as one stroke with a loop](docs/screenshots/issue-5/after-mnist-8.png)
 
 ## Features
 
-- **Raster line vectorization**: Converts grayscale, binary, or RGBA raster
-  strokes into SVG paths using CPU-only JavaScript
-- **Centerline extraction**: Uses Zhang-Suen thinning plus graph endpoint path
-  reconstruction for single-stroke handwriting
-- **SVG output**: Returns path data, simplified points, masks, skeletons, stroke
-  width estimates, and standalone SVG markup
-- **MNIST demo data**: Ships 50 compact MNIST training samples in the GitHub
-  Pages example app
-- **Pencil input demo**: Rasterizes browser pointer input to canvas image data
-  before vectorizing it, so the demo exercises the raster algorithm rather than
-  pointer coordinates
+- **Stroke graph vectorization**: Zhang–Suen thinning, an exact distance
+  transform for the pen width, and spur pruning. Junction clusters are
+  contracted and missed ink is completed along the medial axis.
+- **Loops and U-turns**: an optimal Chinese postman route with
+  minimum-turn Euler trails. Retraced segments are marked `retrace: true`,
+  and every connected component becomes one pen stroke.
+- **Outputs**: SVG path (`linear` polyline or `smooth` cubic Bézier),
+  standalone SVG, strokes with steps, the stroke graph, coverage metrics and
+  [Links Notation](https://github.com/link-foundation/links-notation)
+- **Associative model**: the stroke graph is a doublet links network
+  (`(id: source target)`), following the
+  [associative technology stack](https://github.com/link-assistant/formal-ai/blob/main/docs/associative-tech-stack.md)
+- **Image input**: PNG (all color types and bit depths), PBM/PGM/PPM, JSON
+  rasters and ASCII art. `foreground: 'auto'` detects ink polarity and an
+  Otsu threshold.
+- **CLI, HTTP API and Docker image** with the API server preinstalled
+- **Web app** on GitHub Pages with the following inputs and panels:
+  - inputs: 50 MNIST samples, a pencil canvas and image upload;
+  - panels: skeleton, stroke graph, an animated stroke-order replay, SVG and
+    Links Notation.
 - **Multi-runtime support**: Works with Bun, Node.js, and Deno
 - **Universal testing**: Uses [test-anywhere](https://github.com/link-foundation/test-anywhere) for cross-runtime tests
 - **Automated releases**: Changesets-based versioning with GitHub Actions
@@ -47,11 +69,85 @@ const raster = {
   ),
 };
 
-const result = vectorizeRasterLine(raster);
+const result = vectorizeRasterLine(raster, { curve: 'smooth' });
 
-console.log(result.path);
-console.log(result.svg);
+console.log(result.path); // SVG path data, one "M" subpath per pen stroke
+console.log(result.svg); // standalone SVG document
+console.log(result.strokes); // pen strokes: points, steps, retraceLength
+console.log(result.graph); // stroke graph nodes and edges
+console.log(result.coverage); // skeleton / ink coverage, edges traversed
+console.log(result.lino); // stroke graph in Links Notation
 ```
+
+Options: `threshold`, `alphaThreshold`, `foreground` (`dark` | `light` |
+`auto`), `simplifyTolerance`, `strokeWidth`, `fillHoles`, `curve` (`linear` |
+`smooth`), `lookAhead` and `trace` (a debugging callback per pipeline stage).
+
+Node-only helpers (image decoders and output formatting) and the HTTP server
+are separate entry points so the main entry stays browser-safe:
+
+```js
+import {
+  decodeImage,
+  formatResult,
+} from '@link-foundation/example-package-name/node';
+import { startServer } from '@link-foundation/example-package-name/server';
+```
+
+### CLI
+
+```bash
+npx @link-foundation/example-package-name vectorize examples/images/mnist-8.png
+npx @link-foundation/example-package-name vectorize scan.png --format json --curve smooth
+cat digit.txt | npx @link-foundation/example-package-name vectorize - --format path
+npx @link-foundation/example-package-name --help
+```
+
+`--format` is `svg` (default), `json`, `path` or `lino`. Inputs can be PNG,
+PBM/PGM/PPM, a JSON raster or ASCII art (`#` = ink).
+
+### HTTP API
+
+```bash
+npx @link-foundation/example-package-name serve --port 3000
+
+curl http://localhost:3000/health
+curl --data-binary @examples/images/mnist-8.png \
+  'http://localhost:3000/vectorize?format=svg&curve=smooth'
+curl -H 'content-type: application/json' \
+  -d '{"width":3,"height":1,"pixels":[255,255,255]}' \
+  http://localhost:3000/vectorize
+```
+
+`POST /vectorize` accepts an image body or JSON
+`{ width, height, pixels, options }`. Query parameters: `format`, `threshold`,
+`foreground`, `simplify`, `stroke-width`, `fill-holes`, `curve`,
+`look-ahead`.
+
+### Docker
+
+The image runs the API server on port 3000:
+
+```bash
+docker build -t numbers-vectorization .
+docker run --rm -p 3000:3000 numbers-vectorization
+```
+
+Release builds publish the same image to Docker Hub when Docker publishing is
+enabled (see [Optional Docker Hub Publishing](#optional-docker-hub-publishing)).
+
+### Web App
+
+The GitHub Pages app (`examples/universal-app`) has three input modes:
+
+- MNIST samples;
+- a pencil canvas that is rasterized before vectorizing;
+- image upload, which is downscaled to 280 px and uses an automatic Otsu
+  threshold.
+
+It shows the raster, skeleton, stroke graph (junctions, ends, retraced and
+completed edges), an animated stroke-order replay, the SVG and the Links
+Notation export.
 
 ### Development Commands
 

@@ -3,10 +3,11 @@
   "specifiers": {
     "npm:@changesets/cli@^2.29.7": "2.31.0",
     "npm:eslint-config-prettier@^10.1.8": "10.1.8_eslint@9.39.4",
-    "npm:eslint-plugin-prettier@^5.5.4": "5.5.6_eslint@9.39.4_eslint-config-prettier@10.1.8__eslint@9.39.4_prettier@3.8.4",
+    "npm:eslint-plugin-prettier@^5.5.4": "5.5.6_eslint@9.39.4_eslint-config-prettier@10.1.8_prettier@3.8.4",
     "npm:eslint@^9.38.0": "9.39.4",
     "npm:husky@^9.1.7": "9.1.7",
     "npm:jscpd@^4.0.5": "4.2.5",
+    "npm:links-notation@0.26": "0.26.0",
     "npm:lint-staged@^16.2.6": "16.4.0",
     "npm:prettier@^3.6.2": "3.8.4",
     "npm:test-anywhere@~0.8.48": "0.8.50"
@@ -669,7 +670,7 @@
       ],
       "bin": true
     },
-    "eslint-plugin-prettier@5.5.6_eslint@9.39.4_eslint-config-prettier@10.1.8__eslint@9.39.4_prettier@3.8.4": {
+    "eslint-plugin-prettier@5.5.6_eslint@9.39.4_eslint-config-prettier@10.1.8_prettier@3.8.4": {
       "integrity": "sha512-ifetmTcxWfz+4qRW3pH/ujdTq2jQIj59AxJMIN26K5avYgU8dxycUETQonWiW+wPrYXA0j3Try0l1CnwVQtDqQ==",
       "dependencies": [
         "eslint",
@@ -733,6 +734,7 @@
         "natural-compare",
         "optionator"
       ],
+      "deprecated": true,
       "bin": true
     },
     "espree@10.4.0": {
@@ -1132,6 +1134,9 @@
         "prelude-ls",
         "type-check"
       ]
+    },
+    "links-notation@0.26.0": {
+      "integrity": "sha512-rB3Zfp+ncZJXFkj/3zoR2vtQKb85M0sPLI9KVdWBGXdcyjrqDYRviYSdK3RlCb5a+QqNEkYyEoUyA11RzB+I/g=="
     },
     "lint-staged@16.4.0": {
       "integrity": "sha512-lBWt8hujh/Cjysw5GYVmZpFHXDCgZzhrOm8vbcUdobADZNOK/bRshr2kM3DfgrrtR1DQhfupW9gnIXOfiFi+bw==",
@@ -1721,6 +1726,7 @@
         "npm:eslint@^9.38.0",
         "npm:husky@^9.1.7",
         "npm:jscpd@^4.0.5",
+        "npm:links-notation@0.26",
         "npm:lint-staged@^16.2.6",
         "npm:prettier@^3.6.2",
         "npm:test-anywhere@~0.8.48"
