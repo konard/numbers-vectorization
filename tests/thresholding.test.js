@@ -39,6 +39,45 @@ describe('the threshold actually used is reported (issue 7)', () => {
     ).toEqual({ foreground: 'dark', threshold: 50, auto: false });
   });
 
+  it('keeps all of a single-color ink on a transparent canvas', () => {
+    // Browser pencil strokes: un-premultiplied anti-aliased pixels vary by a
+    // few luminance levels (23-25) around the ink color; Otsu would split
+    // them and keep only the outline.
+    const width = 9;
+    const pixels = new Uint8ClampedArray(width * width * 4);
+    for (let y = 0; y < width; y += 1) {
+      [3, 4, 5].forEach((x) => {
+        const offset = (y * width + x) * 4;
+        const level = x === 4 ? 24 : 23 + (y % 3);
+        pixels.set([level, level, level, x === 4 ? 255 : 200], offset);
+      });
+    }
+    const raster = { width, height: width, pixels };
+    const options = { foreground: 'auto', alphaThreshold: 24 };
+    const mask = vectorizeRasterLine(raster, options).mask;
+
+    expect(resolveThreshold(raster, options)).toEqual({
+      foreground: 'dark',
+      threshold: 255,
+      auto: true,
+    });
+    expect(mask.reduce((sum, value) => sum + value, 0)).toBe(width * 3);
+  });
+
+  it('still splits two inks of clear contrast on a transparent canvas', () => {
+    const raster = {
+      width: 4,
+      height: 1,
+      pixels: [
+        10, 10, 10, 255, 12, 12, 12, 255, 200, 200, 200, 255, 0, 0, 0, 0,
+      ],
+    };
+    const resolved = resolveThreshold(raster, { foreground: 'auto' });
+
+    expect(resolved.foreground).toBe('dark');
+    expect(resolved.threshold >= 12 && resolved.threshold < 200).toBe(true);
+  });
+
   it('adds the threshold to the result', () => {
     const raster = {
       width: 5,
