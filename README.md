@@ -50,10 +50,19 @@ the research behind it and before/after measurements.
   [associative technology stack](https://github.com/link-assistant/formal-ai/blob/main/docs/associative-tech-stack.md)
 - **Image input**: PNG (all color types and bit depths), PBM/PGM/PPM, JSON
   rasters and ASCII art. `foreground: 'auto'` detects ink polarity and an
-  Otsu threshold.
+  Otsu threshold. A single-color ink on a transparent canvas is kept whole.
+- **Auto or manual settings**: every option can be set by hand or left to
+  be matched to the raster. `result.settings` reports every option as it was
+  used, and `automatic` lists the ones that were chosen for this raster.
+- **Pen recordings**: the pen movement (`x y t pressure` samples per
+  stroke) is recorded in the web app and saved as Links Notation or JSON
+  with the settings, for error reports. The library, CLI and HTTP API
+  vectorize a recording the way it was drawn.
 - **CLI, HTTP API and Docker image** with the API server preinstalled
 - **Web app** on GitHub Pages with the following inputs and panels:
-  - inputs: 50 MNIST samples, a pencil canvas and image upload;
+  - inputs: 50 MNIST samples, a pencil canvas (recorded, replayable) and
+    image upload;
+  - settings: an Auto switch for every setting, showing what was used;
   - panels: skeleton, stroke network, an animated stroke-order replay, SVG and
     Links Notation.
 - **Multi-runtime support**: Works with Bun, Node.js, and Deno
@@ -89,6 +98,7 @@ console.log(result.strokes); // pen strokes: points, steps, retraceLength
 console.log(result.network); // stroke network: points and links
 console.log(result.coverage); // skeleton / ink coverage, links traversed
 console.log(result.lino); // stroke network and strokes in Links Notation
+console.log(result.settings); // every option as used, `automatic` choices
 ```
 
 Options: `threshold`, `alphaThreshold`, `foreground` (`dark` | `light` |
@@ -96,6 +106,45 @@ Options: `threshold`, `alphaThreshold`, `foreground` (`dark` | `light` |
 `maxPoints`, `strokeWidth`, `fillHoles`, `curve` (`linear` | `smooth`),
 `lookAhead`, `penLifts`, `penLiftCost` and `trace` (a debugging callback per
 pipeline stage).
+
+Every option is optional. Left out, it is chosen for the raster:
+`foreground: 'auto'` picks the ink polarity, the threshold comes from Otsu's
+method, the tolerance from the shortest description, and the SVG pen width
+from the ink. `result.thresholding` is the threshold that was used.
+
+Pen recordings are timed pen samples. They are kept with
+`createPenRecording`, `beginPenStroke` and `extendPenStroke`, and saved with
+`penRecordingToLinksNotation` or `JSON.stringify`. `parsePenRecording` reads
+either form, and `rasterizePenRecording` draws them again:
+
+```js
+import {
+  parsePenRecording,
+  rasterizePenRecording,
+  vectorizeRasterLine,
+} from '@link-foundation/example-package-name';
+
+const recording = parsePenRecording(`recording:
+  canvas 280 280
+  brush 9 18
+  options:
+    threshold 32
+  strokes:
+    stroke1:
+      pointer pen
+      samples:
+        70 62.8 0 0.35
+        210 60 400 0.5
+        120 230 900 0.4`);
+
+const result = vectorizeRasterLine(
+  rasterizePenRecording(recording),
+  recording.options
+);
+```
+
+`examples/recordings/seven-barred.lino` (and `.json`) is a full recording of
+a barred 7.
 
 Node-only helpers (image decoders and output formatting) and the HTTP server
 are separate entry points so the main entry stays browser-safe:
@@ -118,7 +167,14 @@ npx @link-foundation/example-package-name --help
 ```
 
 `--format` is `svg` (default), `json`, `path` or `lino`. Inputs can be PNG,
-PBM/PGM/PPM, a JSON raster or ASCII art (`#` = ink).
+PBM/PGM/PPM, a JSON raster, ASCII art (`#` = ink) or a pen recording (Links
+Notation or JSON, vectorized with the options it was saved with):
+
+```bash
+npx @link-foundation/example-package-name vectorize examples/recordings/seven-barred.lino --format json
+```
+
+The JSON output includes `thresholding` and `settings`.
 
 `lino` is indented [Links Notation](https://github.com/link-foundation/links-notation),
 the structured form also used by
@@ -171,7 +227,7 @@ curl -H 'content-type: application/json' \
   http://localhost:3000/vectorize
 ```
 
-`POST /vectorize` accepts an image body or JSON
+`POST /vectorize` accepts an image body, a pen recording or JSON
 `{ width, height, pixels, options }`. Query parameters: `format`, `threshold`,
 `foreground`, `simplify`, `stroke-width`, `fill-holes`, `curve`,
 `look-ahead`, `pen-lifts`, `pen-lift-cost`, `point-cost`, `max-points`
@@ -194,9 +250,15 @@ enabled (see [Optional Docker Hub Publishing](#optional-docker-hub-publishing)).
 The GitHub Pages app (`examples/universal-app`) has three input modes:
 
 - MNIST samples;
-- a pencil canvas that is rasterized before vectorizing;
+- a pencil canvas that is rasterized before vectorizing. The pen movement is
+  recorded and can be replayed, saved as Links Notation or JSON with the
+  current settings (for error reports), and loaded back;
 - image upload, which is downscaled to 280 px and uses an automatic Otsu
   threshold.
+
+Every setting has an Auto switch. On Auto it shows the value chosen for
+this raster. Switched off, its slider starts from that value. Max points
+per shape goes down to 1, one dot per shape.
 
 It shows the raster, skeleton, stroke network (junctions, ends, retraced
 and completed links), an animated stroke-order replay, the SVG and the Links
