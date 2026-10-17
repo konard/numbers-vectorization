@@ -1,6 +1,6 @@
 const DEFAULT_THRESHOLD = 32;
 const DEFAULT_RGBA_THRESHOLD = 224;
-const DEFAULT_ALPHA_THRESHOLD = 64;
+export const DEFAULT_ALPHA_THRESHOLD = 64;
 
 export function assertRasterShape(raster) {
   if (!raster || !Number.isInteger(raster.width) || raster.width <= 0) {
@@ -83,10 +83,10 @@ function luminanceSamples(raster, pixels, alphaThreshold) {
 }
 
 /**
- * Otsu's method: the threshold that maximizes the between-class variance of
- * the 0..255 luminance histogram. Values `<= threshold` form the dark class.
+ * Otsu's method on the 0..255 luminance histogram: the split that maximizes
+ * the between-class variance, and the difference between the class means.
  */
-export function otsuThreshold(values) {
+function otsuSplit(values) {
   const histogram = new Float64Array(256);
   values.forEach((value) => {
     histogram[Math.max(0, Math.min(255, Math.round(value)))] += 1;
@@ -95,7 +95,7 @@ export function otsuThreshold(values) {
   const sum = histogram.reduce((acc, count, level) => acc + count * level, 0);
   let darkCount = 0;
   let darkSum = 0;
-  let best = { threshold: 127, variance: -1 };
+  let best = { threshold: 127, variance: -1, contrast: 0 };
 
   for (let level = 0; level < 255; level += 1) {
     darkCount += histogram[level];
@@ -106,15 +106,40 @@ export function otsuThreshold(values) {
       continue;
     }
 
-    const difference = darkSum / darkCount - (sum - darkSum) / lightCount;
-    const variance = darkCount * lightCount * difference * difference;
+    const contrast = (sum - darkSum) / lightCount - darkSum / darkCount;
+    const variance = darkCount * lightCount * contrast * contrast;
 
     if (variance > best.variance) {
-      best = { threshold: level, variance };
+      best = { threshold: level, variance, contrast };
     }
   }
 
-  return best.threshold;
+  return best;
+}
+
+/**
+ * Otsu's method: the threshold that maximizes the between-class variance of
+ * the 0..255 luminance histogram. Values `<= threshold` form the dark class.
+ */
+export function otsuThreshold(values) {
+  return otsuSplit(values).threshold;
+}
+
+/**
+ * Luminance difference below which Otsu's two classes are one ink: browser
+ * pencil strokes are un-premultiplied anti-aliased pixels a few levels
+ * around the ink color, and splitting them would keep only an outline.
+ */
+const MIN_INK_CONTRAST = 48;
+
+function autoThreshold(values, transparent) {
+  const split = otsuSplit(values);
+
+  // On a transparent canvas every opaque pixel of a single-color ink is ink:
+  // alpha alone separates it from the background.
+  return transparent > 0 && split.contrast < MIN_INK_CONTRAST
+    ? 255
+    : split.threshold;
 }
 
 function resolveAutoOptions(raster, pixels, options) {
@@ -132,13 +157,38 @@ function resolveAutoOptions(raster, pixels, options) {
   // Transparent canvases hold ink in their opaque pixels; otherwise the
   // background is the majority, so a light image means dark ink.
   const foreground = transparent > 0 || !(mean < 128) ? 'dark' : 'light';
-  const split = options.threshold ?? otsuThreshold(values);
+  const split = options.threshold ?? autoThreshold(values, transparent);
   const threshold =
     options.threshold === undefined && foreground === 'light'
       ? split + 1
       : split;
 
   return { ...options, foreground, threshold };
+}
+
+/**
+ * The ink polarity and threshold `rasterToMask` uses for these options, with
+ * the defaults filled in. `auto` is true when the threshold was chosen
+ * automatically (Otsu's method).
+ *
+ * @param {{ width: number, height: number, pixels?: ArrayLike<number>,
+ * data?: ArrayLike<number> }} raster - Raster image data.
+ * @param {{ threshold?: number, alphaThreshold?: number,
+ * foreground?: 'dark' | 'light' | 'auto' }} [options] - Thresholding options.
+ * @returns {{ foreground: 'dark' | 'light', threshold: number,
+ * auto: boolean }} Resolved thresholding.
+ */
+export function resolveThreshold(raster, options = {}) {
+  const pixels = assertRasterShape(raster);
+  const rgba = pixels.length === raster.width * raster.height * 4;
+  const resolved = resolveAutoOptions(raster, pixels, options);
+
+  return {
+    foreground: resolved.foreground ?? (rgba ? 'dark' : 'light'),
+    threshold:
+      resolved.threshold ?? (rgba ? DEFAULT_RGBA_THRESHOLD : DEFAULT_THRESHOLD),
+    auto: options.foreground === 'auto' && options.threshold === undefined,
+  };
 }
 
 /**

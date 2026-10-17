@@ -4,7 +4,12 @@ import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 
 import { add, multiply, vectorizeRasterLine } from '../src/index.js';
-import { decodeImage, formatResult, optionsFromParams } from '../src/node.js';
+import {
+  decodeImage,
+  defaultOptionsFor,
+  formatResult,
+  optionsFromParams,
+} from '../src/node.js';
 import { startServer } from '../src/server.js';
 
 const COMMANDS = {
@@ -27,11 +32,15 @@ function usage() {
     '  --output <file>              Write output to a file instead of stdout',
     '  --foreground dark|light|auto Ink polarity (default: auto)',
     '  --threshold <n>              Ink threshold (default: Otsu when auto)',
-    '  --simplify <n>               Simplification tolerance in pixels',
+    '  --simplify auto|<n>          Tolerance in pixels, or tuned per shape (auto)',
+    '  --point-cost <n>             Pen-width squares of ink a point must explain (1)',
+    '  --max-points <n>             Most points per separate shape (1 = a dot)',
     '  --stroke-width <n>           SVG stroke width override',
     '  --fill-holes <n>             Fill enclosed holes up to n pixels',
     '  --curve linear|smooth        Polyline or smooth cubic Bézier output',
     '  --look-ahead <n>             Tangent look-ahead for path continuation',
+    '  --pen-lifts true|false       Lift the pen where lines cross (default: true)',
+    '  --pen-lift-cost <n>          Pen widths of retracing a lift saves (2.5)',
     '',
     'Serve options:',
     '  --port <n>  Port to listen on (default: 3000, env PORT)',
@@ -89,11 +98,12 @@ function runVectorize(args, stdout) {
   }
 
   const bytes = new Uint8Array(readFileSync(file === '-' ? 0 : file));
-  const { raster, format } = decodeImage(bytes);
-  const options = optionsFromParams((name) => flags.get(name), {
-    foreground: format === 'ascii' || format === 'json' ? undefined : 'auto',
-  });
-  const result = vectorizeRasterLine(raster, options);
+  const decoded = decodeImage(bytes);
+  const options = optionsFromParams(
+    (name) => flags.get(name),
+    defaultOptionsFor(decoded)
+  );
+  const result = vectorizeRasterLine(decoded.raster, options);
   const output = formatResult(result, flags.get('format') ?? 'svg');
 
   if (flags.has('output')) {

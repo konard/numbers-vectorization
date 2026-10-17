@@ -200,12 +200,41 @@ describe('Netpbm, ASCII and JSON decoding', () => {
     ).toThrow();
   });
 
+  it('parses the pen lift options', () => {
+    const params = { 'pen-lifts': 'off', 'pen-lift-cost': '4' };
+
+    expect(optionsFromParams((name) => params[name])).toEqual({
+      penLifts: false,
+      penLiftCost: 4,
+    });
+    expect(
+      optionsFromParams((name) => ({ 'pen-lifts': 'true' })[name])
+    ).toEqual({ penLifts: true });
+    expect(() =>
+      optionsFromParams((name) => ({ 'pen-lifts': 'maybe' })[name])
+    ).toThrow();
+  });
+
+  it('parses the simplification options', () => {
+    const params = { simplify: 'auto', 'point-cost': '2', 'max-points': '1' };
+
+    expect(optionsFromParams((name) => params[name])).toEqual({
+      simplifyTolerance: 'auto',
+      pointCost: 2,
+      maxPoints: 1,
+    });
+    expect(() =>
+      optionsFromParams((name) => ({ 'max-points': 'many' })[name])
+    ).toThrow();
+  });
+
   it('formats results as json, svg, path and lino', () => {
     const result = vectorizeRasterLine(parseAsciiRaster(SHAPES.six.join('\n')));
     const json = JSON.parse(formatResult(result, 'json').body);
 
     expect(json.coverage.skeleton).toBe(1);
     expect(json.mask).toBe(undefined);
+    expect(json.simplification.tolerance).toBe('auto');
     expect(formatResult(result, 'svg').contentType).toBe('image/svg+xml');
     expect(formatResult(result, 'path').body).toBe(result.path);
     expect(formatResult(result, 'lino').body).toBe(result.lino);
@@ -226,8 +255,32 @@ describe('vectorize CLI command', () => {
       expect(svg.code).toBe(0);
       expect(svg.stdout.startsWith('<svg')).toBe(true);
       expect(JSON.parse(json.stdout).coverage.skeleton).toBe(1);
-      expect(lino.stdout.startsWith('(raster: size 28 28)')).toBe(true);
+      expect(lino.stdout.startsWith('vectorization:\n  raster 28 28')).toBe(
+        true
+      );
     }
+  });
+
+  it('vectorizes pen recordings saved as Links Notation or JSON', () => {
+    const [lino, json] = ['lino', 'json'].map((extension) =>
+      captureCli([
+        'vectorize',
+        `examples/recordings/seven-barred.${extension}`,
+        '--format',
+        'json',
+      ])
+    );
+    const result = JSON.parse(lino.stdout);
+
+    expect(lino.code).toBe(0);
+    expect(json.stdout).toBe(lino.stdout);
+    expect(result.strokes.length).toBe(2);
+    // The recorded options are used: a fixed threshold, not Otsu.
+    expect(result.thresholding).toEqual({
+      foreground: 'dark',
+      threshold: 32,
+      auto: false,
+    });
   });
 
   it('produces the same strokes for both polarities of the same digit', () => {

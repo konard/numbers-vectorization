@@ -171,16 +171,60 @@ function findCorners(points, span) {
 }
 
 /**
+ * Drop jogs: runs of corners closer than `jogSpan` to each other whose turns
+ * cancel out (the line leaves the run within `CORNER_ANGLE` of the direction
+ * it came in). A stroke crossing another one is routed through the shared
+ * junction point, which bends it sideways and back by less than a pen width;
+ * that is not a corner the writer drew.
+ */
+function dropJogs(points, corners, jogSpan) {
+  const runs = [];
+
+  corners.forEach((index) => {
+    const run = runs.at(-1);
+
+    if (run && polylineLength(points.slice(run.at(-1), index + 1)) <= jogSpan) {
+      run.push(index);
+    } else {
+      runs.push([index]);
+    }
+  });
+
+  return runs.flatMap((run) => {
+    if (run.length < 2) {
+      return run;
+    }
+
+    const first = points[run[0]];
+    const last = points[run.at(-1)];
+    const before = pointAtArc(points, run[0], -1, jogSpan);
+    const after = pointAtArc(points, run.at(-1), 1, jogSpan);
+    const turn = angleBetween(
+      { x: first.x - before.x, y: first.y - before.y },
+      { x: after.x - last.x, y: after.y - last.y }
+    );
+
+    return turn < CORNER_ANGLE ? [] : run;
+  });
+}
+
+/**
  * Simplify a centerline with RDP while keeping every sharp corner (turns of
  * at least 40 degrees over a `CORNER_SPAN` pixel window) as a fixed vertex, so
- * right angles survive simplification but pixel staircases do not.
+ * right angles survive simplification but pixel staircases do not. Corners
+ * that undo each other within `jogSpan` pixels (one pen width) are jogs, not
+ * corners, and are simplified like any other point.
  */
-export function simplifyCenterline(points, tolerance) {
+export function simplifyCenterline(points, tolerance, jogSpan = 0) {
   if (points.length <= 2) {
     return [...points];
   }
 
-  const cornerIndices = [0, ...findCorners(points, CORNER_SPAN)];
+  const corners = findCorners(points, CORNER_SPAN);
+  const cornerIndices = [
+    0,
+    ...(jogSpan > 0 ? dropJogs(points, corners, jogSpan) : corners),
+  ];
   cornerIndices.push(points.length - 1);
 
   const simplified = [];

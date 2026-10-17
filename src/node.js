@@ -1,5 +1,11 @@
 import { inflateSync } from 'node:zlib';
 
+import {
+  isPenRecordingText,
+  parsePenRecording,
+  rasterizePenRecording,
+} from './pen-recording.js';
+
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const PNG_CHANNELS = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
 const INK_CHARACTERS = /[^.\s0_-]/;
@@ -312,11 +318,13 @@ export function parseAsciiRaster(text) {
 /**
  * Decode any supported image file into a raster accepted by
  * `vectorizeRasterLine`: PNG, Netpbm, a JSON `{ width, height, pixels }`
- * object, or an ASCII-art raster.
+ * object, a pen recording (JSON or Links Notation, drawn again as it was
+ * recorded) or an ASCII-art raster.
  *
  * @param {Uint8Array} bytes - File contents.
  * @returns {{ raster: { width: number, height: number,
- * pixels: ArrayLike<number> }, format: string }} Decoded raster.
+ * pixels: ArrayLike<number> }, format: string, options?: object }} Decoded
+ * raster; a pen recording also returns the options it was saved with.
  */
 export function decodeImage(bytes) {
   if (isPng(bytes)) {
@@ -329,12 +337,38 @@ export function decodeImage(bytes) {
 
   const text = Buffer.from(bytes).toString('utf8');
 
+  if (isPenRecordingText(text)) {
+    const recording = parsePenRecording(text);
+    return {
+      raster: rasterizePenRecording(recording),
+      format: 'pen-recording',
+      options: recording.options ?? {},
+    };
+  }
+
   if (text.trimStart().startsWith('{')) {
     const { width, height, pixels } = JSON.parse(text);
     return { raster: { width, height, pixels }, format: 'json' };
   }
 
   return { raster: parseAsciiRaster(text), format: 'ascii' };
+}
+
+/**
+ * Default vectorization options for a decoded input: images of unknown
+ * polarity use the automatic threshold, ASCII and JSON rasters the library
+ * defaults, and pen recordings the options they were saved with.
+ * @param {{ format: string, options?: object }} decoded - From decodeImage.
+ * @returns {object} Vectorization options.
+ */
+export function defaultOptionsFor(decoded) {
+  if (decoded.format === 'pen-recording') {
+    return { ...decoded.options };
+  }
+
+  return decoded.format === 'ascii' || decoded.format === 'json'
+    ? {}
+    : { foreground: 'auto' };
 }
 
 /**
@@ -348,8 +382,11 @@ export function resultToJson(result) {
     strokeWidth: result.strokeWidth,
     path: result.path,
     strokes: result.strokes,
-    graph: result.graph,
+    network: result.network,
     coverage: result.coverage,
+    thresholding: result.thresholding,
+    simplification: result.simplification,
+    settings: result.settings,
     svg: result.svg,
     lino: result.lino,
   };
@@ -362,11 +399,55 @@ const NUMBER_OPTIONS = {
   'stroke-width': 'strokeWidth',
   'fill-holes': 'fillHoles',
   'look-ahead': 'lookAhead',
+  'pen-lift-cost': 'penLiftCost',
+  'point-cost': 'pointCost',
+  'max-points': 'maxPoints',
+};
+const BOOLEAN_OPTIONS = {
+  'pen-lifts': 'penLifts',
+};
+const BOOLEAN_VALUES = {
+  true: true,
+  on: true,
+  yes: true,
+  1: true,
+  false: false,
+  off: false,
+  no: false,
+  0: false,
 };
 const CHOICE_OPTIONS = {
   foreground: ['dark', 'light', 'auto'],
   curve: ['linear', 'smooth'],
 };
+
+function parseNumberParam(name, value) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`--${name} must be a finite number`);
+  }
+
+  return parsed;
+}
+
+function parseBooleanParam(name, value) {
+  if (!(value in BOOLEAN_VALUES)) {
+    throw new Error(`--${name} must be true or false`);
+  }
+
+  return BOOLEAN_VALUES[value];
+}
+
+function parseChoiceParam(name, value) {
+  if (!CHOICE_OPTIONS[name].includes(value)) {
+    throw new Error(
+      `--${name} must be one of: ${CHOICE_OPTIONS[name].join(', ')}`
+    );
+  }
+
+  return value;
+}
 
 /**
  * Build `vectorizeRasterLine` options from string parameters (CLI flags or
@@ -379,30 +460,24 @@ const CHOICE_OPTIONS = {
  */
 export function optionsFromParams(read, defaults = {}) {
   const options = { ...defaults };
+  const parsers = [
+    [NUMBER_OPTIONS, parseNumberParam],
+    [BOOLEAN_OPTIONS, parseBooleanParam],
+    [
+      Object.fromEntries(Object.keys(CHOICE_OPTIONS).map((n) => [n, n])),
+      parseChoiceParam,
+    ],
+  ];
 
-  for (const [name, key] of Object.entries(NUMBER_OPTIONS)) {
-    const value = read(name);
+  for (const [names, parse] of parsers) {
+    for (const [name, key] of Object.entries(names)) {
+      const value = read(name);
 
-    if (value !== null && value !== undefined) {
-      const parsed = Number(value);
-
-      if (!Number.isFinite(parsed)) {
-        throw new Error(`--${name} must be a finite number`);
+      if (name === 'simplify' && value === 'auto') {
+        options[key] = 'auto';
+      } else if (value !== null && value !== undefined) {
+        options[key] = parse(name, value);
       }
-
-      options[key] = parsed;
-    }
-  }
-
-  for (const [name, choices] of Object.entries(CHOICE_OPTIONS)) {
-    const value = read(name);
-
-    if (value !== null && value !== undefined) {
-      if (!choices.includes(value)) {
-        throw new Error(`--${name} must be one of: ${choices.join(', ')}`);
-      }
-
-      options[name] = value;
     }
   }
 

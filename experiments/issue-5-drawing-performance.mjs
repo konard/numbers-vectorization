@@ -28,7 +28,7 @@ function report(name, raster, options) {
     `${elapsed.toFixed(0)} ms`,
     `pen=${result.coverage.penWidth}`,
     `strokes=${result.strokes.length}`,
-    `edges=${result.coverage.edges.traversed}/${result.coverage.edges.total}`,
+    `edges=${result.coverage.links.traversed}/${result.coverage.links.total}`,
     `completed=${completed}`,
     `mask=${result.coverage.mask.toFixed(3)}`,
     `retrace=${result.strokes.map((s) => s.retraceLength).join(',')}`

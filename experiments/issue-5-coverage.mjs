@@ -35,8 +35,8 @@ for (const { index, label, raster } of samples) {
     precision: after.coverage.precision,
     strokes: after.strokes.length,
     retrace: after.strokes.reduce((sum, s) => sum + s.retraceLength, 0),
-    edges: `${after.coverage.edges.traversed}/${after.coverage.edges.total}`,
-    nodes: after.graph.nodes.length,
+    edges: `${after.coverage.links.traversed}/${after.coverage.links.total}`,
+    nodes: after.network.points.length,
   });
 
   if (verbose) {

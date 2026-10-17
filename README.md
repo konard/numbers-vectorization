@@ -13,8 +13,9 @@ The vectorizer handles every path a digit can need:
 - junctions and crossings;
 - separate strokes and dots.
 
-It thresholds the image, thins it to a skeleton and builds a stroke graph in
-a doublet links store. It then plans a minimum-retrace pen route (Chinese
+It thresholds the image, thins it to a skeleton and builds a stroke network
+in a doublet links store: points (ends, junctions) and the links between them
+(skeleton branches). It then plans a minimum-retrace pen route (Chinese
 postman + Euler trail). All 50 bundled MNIST samples are fully drawn: every
 skeleton branch is covered. See the
 [issue #5 case study](docs/case-studies/issue-5/README.md) for the algorithm,
@@ -24,25 +25,45 @@ the research behind it and before/after measurements.
 
 ## Features
 
-- **Stroke graph vectorization**: Zhang–Suen thinning, an exact distance
+- **Stroke network vectorization**: Zhang–Suen thinning, an exact distance
   transform for the pen width, and spur pruning. Junction clusters are
   contracted and missed ink is completed along the medial axis.
 - **Loops and U-turns**: an optimal Chinese postman route with
-  minimum-turn Euler trails. Retraced segments are marked `retrace: true`,
-  and every connected component becomes one pen stroke.
+  minimum-turn Euler trails. Retraced segments are marked `retrace: true`.
+  A connected component is one pen stroke unless lifting the pen where its
+  lines cross or meet straight (the two strokes of a `+`, `x` or `T`, the bar
+  of a `7`) saves more than 2.5 pen widths of retracing per lift
+  (`penLifts`, `penLiftCost`).
+- **Fewest points**: each separate shape is simplified on its own with the
+  tolerance whose description is shortest: pixels drawn wrong plus one
+  pen-width square of ink per point (`simplifyTolerance: 'auto'`,
+  `pointCost`). A manual tolerance or a point budget per shape
+  (`maxPoints`, down to one dot per shape) overrides it, and
+  `result.simplification` reports the tolerance, points and match per shape.
 - **Outputs**: SVG path (`linear` polyline or `smooth` cubic Bézier),
-  standalone SVG, strokes with steps, the stroke graph, coverage metrics and
-  [Links Notation](https://github.com/link-foundation/links-notation)
-- **Associative model**: the stroke graph is a doublet links network
-  (`(id: source target)`), following the
+  standalone SVG, strokes with steps, the stroke network, coverage metrics and
+  indented [Links Notation](https://github.com/link-foundation/links-notation)
+  (the structured form also used by lino-objects-codec)
+- **Associative model**: the stroke network is a links network, not a graph:
+  a point is a self-referencing link `(id: id id)` and every branch is a
+  doublet link `(id: source target)` referencing its points, following the
   [associative technology stack](https://github.com/link-assistant/formal-ai/blob/main/docs/associative-tech-stack.md)
 - **Image input**: PNG (all color types and bit depths), PBM/PGM/PPM, JSON
   rasters and ASCII art. `foreground: 'auto'` detects ink polarity and an
-  Otsu threshold.
+  Otsu threshold. A single-color ink on a transparent canvas is kept whole.
+- **Auto or manual settings**: every option can be set by hand or left to
+  be matched to the raster. `result.settings` reports every option as it was
+  used, and `automatic` lists the ones that were chosen for this raster.
+- **Pen recordings**: the pen movement (`x y t pressure` samples per
+  stroke) is recorded in the web app and saved as Links Notation or JSON
+  with the settings, for error reports. The library, CLI and HTTP API
+  vectorize a recording the way it was drawn.
 - **CLI, HTTP API and Docker image** with the API server preinstalled
 - **Web app** on GitHub Pages with the following inputs and panels:
-  - inputs: 50 MNIST samples, a pencil canvas and image upload;
-  - panels: skeleton, stroke graph, an animated stroke-order replay, SVG and
+  - inputs: 50 MNIST samples, a pencil canvas (recorded, replayable) and
+    image upload;
+  - settings: an Auto switch for every setting, showing what was used;
+  - panels: skeleton, stroke network, an animated stroke-order replay, SVG and
     Links Notation.
 - **Multi-runtime support**: Works with Bun, Node.js, and Deno
 - **Universal testing**: Uses [test-anywhere](https://github.com/link-foundation/test-anywhere) for cross-runtime tests
@@ -74,14 +95,56 @@ const result = vectorizeRasterLine(raster, { curve: 'smooth' });
 console.log(result.path); // SVG path data, one "M" subpath per pen stroke
 console.log(result.svg); // standalone SVG document
 console.log(result.strokes); // pen strokes: points, steps, retraceLength
-console.log(result.graph); // stroke graph nodes and edges
-console.log(result.coverage); // skeleton / ink coverage, edges traversed
-console.log(result.lino); // stroke graph in Links Notation
+console.log(result.network); // stroke network: points and links
+console.log(result.coverage); // skeleton / ink coverage, links traversed
+console.log(result.lino); // stroke network and strokes in Links Notation
+console.log(result.settings); // every option as used, `automatic` choices
 ```
 
 Options: `threshold`, `alphaThreshold`, `foreground` (`dark` | `light` |
-`auto`), `simplifyTolerance`, `strokeWidth`, `fillHoles`, `curve` (`linear` |
-`smooth`), `lookAhead` and `trace` (a debugging callback per pipeline stage).
+`auto`), `simplifyTolerance` (pixels or `auto`, the default), `pointCost`,
+`maxPoints`, `strokeWidth`, `fillHoles`, `curve` (`linear` | `smooth`),
+`lookAhead`, `penLifts`, `penLiftCost` and `trace` (a debugging callback per
+pipeline stage).
+
+Every option is optional. Left out, it is chosen for the raster:
+`foreground: 'auto'` picks the ink polarity, the threshold comes from Otsu's
+method, the tolerance from the shortest description, and the SVG pen width
+from the ink. `result.thresholding` is the threshold that was used.
+
+Pen recordings are timed pen samples. They are kept with
+`createPenRecording`, `beginPenStroke` and `extendPenStroke`, and saved with
+`penRecordingToLinksNotation` or `JSON.stringify`. `parsePenRecording` reads
+either form, and `rasterizePenRecording` draws them again:
+
+```js
+import {
+  parsePenRecording,
+  rasterizePenRecording,
+  vectorizeRasterLine,
+} from '@link-foundation/example-package-name';
+
+const recording = parsePenRecording(`recording:
+  canvas 280 280
+  brush 9 18
+  options:
+    threshold 32
+  strokes:
+    stroke1:
+      pointer pen
+      samples:
+        70 62.8 0 0.35
+        210 60 400 0.5
+        120 230 900 0.4`);
+
+const result = vectorizeRasterLine(
+  rasterizePenRecording(recording),
+  recording.options
+);
+```
+
+`examples/recordings/seven-barred.lino` (and `.json`) is a full recording of
+a barred 7.
 
 Node-only helpers (image decoders and output formatting) and the HTTP server
 are separate entry points so the main entry stays browser-safe:
@@ -104,7 +167,52 @@ npx @link-foundation/example-package-name --help
 ```
 
 `--format` is `svg` (default), `json`, `path` or `lino`. Inputs can be PNG,
-PBM/PGM/PPM, a JSON raster or ASCII art (`#` = ink).
+PBM/PGM/PPM, a JSON raster, ASCII art (`#` = ink) or a pen recording (Links
+Notation or JSON, vectorized with the options it was saved with):
+
+```bash
+npx @link-foundation/example-package-name vectorize examples/recordings/seven-barred.lino --format json
+```
+
+The JSON output includes `thresholding` and `settings`.
+
+`lino` is indented [Links Notation](https://github.com/link-foundation/links-notation),
+the structured form also used by
+[lino-objects-codec](https://github.com/link-foundation/lino-objects-codec).
+Each point and link of the stroke network is named. Each stroke lists the
+points it draws and the links it walks, in order (`retrace` marks a U-turn).
+This is `examples/images/mnist-4.png`:
+
+```
+vectorization:
+  raster 28 28
+  pen 2.24
+  network:
+    p1: point 23.179 4.821
+    p2: point 13.5 9.5
+    p3: point 13 15.5
+    p4: point 7.5 16.5
+    p6: point 12.038 22.886
+    l7: link p1 p3
+      points (23.179 4.821) (16.5 16.5) (13 15.5)
+    l8: link p2 p3
+      points (13.5 9.5) (11.5 12.5) (13 15.5)
+    l10: link p3 p4
+      points (13 15.5) (10.5 14.5) (7.5 16.5)
+    l11: link p3 p6
+      points (13 15.5) (12.038 22.886)
+  strokes:
+    stroke1:
+      points (13.5 9.5) (11.5 12.5) (13.5 17.5) (12.038 22.886)
+      steps:
+        l8 p2 p3
+        l11 p3 p6
+    stroke2:
+      points (7.5 16.5) (10.5 14.5) (16.5 16.5) (23.179 4.821)
+      steps:
+        l10 p4 p3
+        l7 p3 p1
+```
 
 ### HTTP API
 
@@ -119,10 +227,11 @@ curl -H 'content-type: application/json' \
   http://localhost:3000/vectorize
 ```
 
-`POST /vectorize` accepts an image body or JSON
+`POST /vectorize` accepts an image body, a pen recording or JSON
 `{ width, height, pixels, options }`. Query parameters: `format`, `threshold`,
 `foreground`, `simplify`, `stroke-width`, `fill-holes`, `curve`,
-`look-ahead`.
+`look-ahead`, `pen-lifts`, `pen-lift-cost`, `point-cost`, `max-points`
+(`simplify` also takes `auto`).
 
 ### Docker
 
@@ -141,12 +250,18 @@ enabled (see [Optional Docker Hub Publishing](#optional-docker-hub-publishing)).
 The GitHub Pages app (`examples/universal-app`) has three input modes:
 
 - MNIST samples;
-- a pencil canvas that is rasterized before vectorizing;
+- a pencil canvas that is rasterized before vectorizing. The pen movement is
+  recorded and can be replayed, saved as Links Notation or JSON with the
+  current settings (for error reports), and loaded back;
 - image upload, which is downscaled to 280 px and uses an automatic Otsu
   threshold.
 
-It shows the raster, skeleton, stroke graph (junctions, ends, retraced and
-completed edges), an animated stroke-order replay, the SVG and the Links
+Every setting has an Auto switch. On Auto it shows the value chosen for
+this raster. Switched off, its slider starts from that value. Max points
+per shape goes down to 1, one dot per shape.
+
+It shows the raster, skeleton, stroke network (junctions, ends, retraced
+and completed links), an animated stroke-order replay, the SVG and the Links
 Notation export.
 
 ### Development Commands

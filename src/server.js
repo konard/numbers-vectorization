@@ -3,7 +3,13 @@ import { createServer } from 'node:http';
 import { URL } from 'node:url';
 
 import { vectorizeRasterLine } from './index.js';
-import { decodeImage, formatResult, optionsFromParams } from './node.js';
+import { isPenRecordingText } from './pen-recording.js';
+import {
+  decodeImage,
+  defaultOptionsFor,
+  formatResult,
+  optionsFromParams,
+} from './node.js';
 
 const DEFAULT_MAX_BODY_BYTES = 10 * 1024 * 1024;
 const CORS_HEADERS = {
@@ -58,8 +64,10 @@ function parseRequest(body, contentType, params) {
     throw new HttpError(400, 'Request body is empty');
   }
 
-  if (contentType.includes('application/json')) {
-    const payload = JSON.parse(body.toString('utf8'));
+  const text = body.toString('utf8');
+
+  if (contentType.includes('application/json') && !isPenRecordingText(text)) {
+    const payload = JSON.parse(text);
     const raster = payload.raster ?? payload;
     return {
       raster,
@@ -67,9 +75,17 @@ function parseRequest(body, contentType, params) {
     };
   }
 
+  const decoded = decodeImage(new Uint8Array(body));
   return {
-    raster: decodeImage(new Uint8Array(body)).raster,
-    options: optionsFromParams(params, { foreground: 'auto' }),
+    raster: decoded.raster,
+    // Uploaded images may be light or dark ink; a pen recording keeps the
+    // options it was drawn with.
+    options: optionsFromParams(
+      params,
+      decoded.format === 'pen-recording'
+        ? defaultOptionsFor(decoded)
+        : { foreground: 'auto' }
+    ),
   };
 }
 
@@ -106,7 +122,9 @@ function usage(info) {
       'POST /vectorize':
         'Body: PNG, PBM/PGM/PPM, ASCII art, or JSON { width, height, pixels, options }. ' +
         'Query: format=json|svg|path|lino, threshold, foreground=dark|light|auto, ' +
-        'simplify, stroke-width, fill-holes, curve=linear|smooth, look-ahead',
+        'simplify, stroke-width, fill-holes, curve=linear|smooth, look-ahead, ' +
+        'pen-lifts=true|false, pen-lift-cost, simplify=auto|<n>, point-cost, ' +
+        'max-points',
     },
   };
 }

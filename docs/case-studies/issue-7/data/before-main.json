@@ -1,0 +1,111 @@
+{
+  "vectorizer": "main (a9b36c0) src/index.js",
+  "fourLoop": {
+    "gap 30": {
+      "points": 4,
+      "links": 4,
+      "strokes": 1,
+      "svgPoints": 33,
+      "retrace": 17.4,
+      "ink": 0.992
+    },
+    "gap 14": {
+      "points": 22,
+      "links": 21,
+      "strokes": 1,
+      "svgPoints": 69,
+      "retrace": 180.5,
+      "ink": 0.963
+    },
+    "gap 6": {
+      "points": 6,
+      "links": 5,
+      "strokes": 1,
+      "svgPoints": 47,
+      "retrace": 96.2,
+      "ink": 0.961
+    },
+    "gap 3": {
+      "points": 4,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 39,
+      "retrace": 92.6,
+      "ink": 0.989
+    },
+    "gap 0": {
+      "points": 4,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 31,
+      "retrace": 89.4,
+      "ink": 0.997
+    }
+  },
+  "multiStroke": {
+    "plus": {
+      "points": 5,
+      "links": 4,
+      "strokes": 1,
+      "svgPoints": 7,
+      "retrace": 139.8,
+      "ink": 1
+    },
+    "cross": {
+      "points": 5,
+      "links": 4,
+      "strokes": 1,
+      "svgPoints": 9,
+      "retrace": 168.7,
+      "ink": 1
+    },
+    "tee": {
+      "points": 4,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 5,
+      "retrace": 69.9,
+      "ink": 1
+    },
+    "seven": {
+      "points": 12,
+      "links": 11,
+      "strokes": 1,
+      "svgPoints": 27,
+      "retrace": 73.8,
+      "ink": 0.999
+    },
+    "letterA": {
+      "points": 8,
+      "links": 8,
+      "strokes": 1,
+      "svgPoints": 67,
+      "retrace": 75.3,
+      "ink": 0.996
+    },
+    "openFour": {
+      "points": 7,
+      "links": 6,
+      "strokes": 1,
+      "svgPoints": 12,
+      "retrace": 100.2,
+      "ink": 1
+    }
+  },
+  "sevenBarredRecording": {
+    "points": 8,
+    "links": 7,
+    "strokes": 1,
+    "svgPoints": 51,
+    "retrace": 76.5,
+    "ink": 0.978
+  },
+  "mnist50": {
+    "strokes": 53,
+    "networkLinks": 142,
+    "svgPoints": 505,
+    "retrace": 146.1,
+    "meanInk": 0.981,
+    "minInk": 0.932
+  }
+}

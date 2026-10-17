@@ -20,10 +20,10 @@ function subpathCount(path) {
 
 function expectFullyDrawn(result) {
   expect(result.coverage.skeleton).toBe(1);
-  expect(result.coverage.edges.traversed).toBe(result.coverage.edges.total);
+  expect(result.coverage.links.traversed).toBe(result.coverage.links.total);
 }
 
-describe('stroke graph traversal (issue 5)', () => {
+describe('stroke network traversal (issue 5)', () => {
   it('draws a closed loop as one stroke that returns to its start', () => {
     const result = vectorizeShape('zero');
     const [stroke] = result.strokes;
@@ -41,13 +41,13 @@ describe('stroke graph traversal (issue 5)', () => {
     expectFullyDrawn(result);
     expect(result.strokes.length).toBe(1);
     expect(result.strokes[0].retraceLength).toBe(0);
-    expect(result.graph.edges.length).toBe(3);
+    expect(result.network.links.length).toBe(3);
   });
 
   it('draws a loop with a tail (6) starting from the free end', () => {
     const result = vectorizeShape('six');
     const [stroke] = result.strokes;
-    const degrees = result.graph.nodes.map((node) => node.degree).sort();
+    const degrees = result.network.points.map((node) => node.degree).sort();
 
     expectFullyDrawn(result);
     expect(result.strokes.length).toBe(1);
@@ -56,18 +56,18 @@ describe('stroke graph traversal (issue 5)', () => {
   });
 
   it('crosses straight through a + junction and retraces the minimum', () => {
-    const result = vectorizeShape('plus');
+    const result = vectorizeShape('plus', { penLifts: false });
     const [stroke] = result.strokes;
 
     expectFullyDrawn(result);
     expect(result.strokes.length).toBe(1);
-    expect(result.graph.nodes.some((node) => node.degree === 4)).toBe(true);
+    expect(result.network.points.some((node) => node.degree === 4)).toBe(true);
     // Four arms of length 4: one pair of arms has to be drawn twice.
     expect(stroke.retraceLength).toBe(8);
   });
 
   it('makes a U-turn to draw the dead-end branch of a T junction', () => {
-    const result = vectorizeShape('tee');
+    const result = vectorizeShape('tee', { penLifts: false });
     const [stroke] = result.strokes;
     const retraced = stroke.steps.filter((step) => step.retrace);
 
@@ -75,7 +75,17 @@ describe('stroke graph traversal (issue 5)', () => {
     expect(result.strokes.length).toBe(1);
     expect(retraced.length).toBe(1);
     expect(stroke.retraceLength).toBe(4);
-    expect(result.lino.includes(' retrace)')).toBe(true);
+    expect(result.lino.includes(' retrace\n')).toBe(true);
+  });
+
+  it('lifts the pen instead where the lines cross straight (issue 7)', () => {
+    for (const name of ['plus', 'tee']) {
+      const result = vectorizeShape(name);
+
+      expectFullyDrawn(result);
+      expect(result.strokes.length).toBe(2);
+      expect(result.strokes.every((s) => s.retraceLength === 0)).toBe(true);
+    }
   });
 
   it('emits one subpath per connected component', () => {
@@ -121,35 +131,60 @@ describe('stroke graph traversal (issue 5)', () => {
     const result = vectorizeRasterLine(raster);
 
     expect(result.strokes.length).toBe(1);
-    expect(result.graph.edges.length).toBe(3);
+    expect(result.network.links.length).toBe(3);
     expect(result.strokes[0].retraceLength).toBe(0);
     expect(result.coverage.mask >= 0.95).toBe(true);
-    expect(result.graph.edges.some((edge) => edge.completed)).toBe(false);
+    expect(result.network.links.some((edge) => edge.completed)).toBe(false);
   });
 
-  it('flags graph edges added by coverage completion', () => {
+  it('flags network links added by coverage completion', () => {
     const { raster } = loadBundledMnistSamples().find(
       (sample) => sample.index === 36
     );
     const result = vectorizeRasterLine(raster);
-    const completed = result.graph.edges.filter((edge) => edge.completed);
+    const completed = result.network.links.filter((edge) => edge.completed);
 
     expect(completed.length >= 1).toBe(true);
     expect(completed.every((edge) => edge.points.length >= 2)).toBe(true);
     expectFullyDrawn(result);
   });
 
-  it('exports the stroke graph as parseable Links Notation', () => {
+  it('exports the stroke network as indented Links Notation (issue 7)', () => {
     const result = vectorizeShape('six');
-    const links = new Parser().parse(result.lino);
-    const ids = links.map((link) => link.id);
+    const [root, ...rest] = new Parser().parseGroups(result.lino);
+    const child = (group, id) =>
+      group.children.find((entry) => entry.element.id === id);
+    const network = child(root, 'network');
+    const strokes = child(root, 'strokes');
 
-    expect(result.lino.startsWith('(raster: size 10 11)')).toBe(true);
-    expect(ids.includes('raster')).toBe(true);
-    expect(ids.includes('stroke1')).toBe(true);
-    expect(ids.filter((id) => /^e\d+$/.test(id)).length).toBe(
-      result.graph.edges.length
+    expect(rest.length).toBe(0);
+    expect(root.element.id).toBe('vectorization');
+    expect(result.lino.startsWith('vectorization:\n  raster 10 11\n')).toBe(
+      true
     );
+    expect(
+      network.children.filter((entry) => /^p\d+$/.test(entry.element.id)).length
+    ).toBe(result.network.points.length);
+    expect(
+      network.children.filter((entry) => /^l\d+$/.test(entry.element.id)).length
+    ).toBe(result.network.links.length);
+    expect(strokes.children.map((entry) => entry.element.id)).toEqual(
+      result.strokes.map((_, index) => `stroke${index + 1}`)
+    );
+    const steps = child(strokes.children[0], 'steps');
+    expect(steps.children.length).toBe(result.strokes[0].steps.length);
+  });
+
+  it('nests every link under its parent when parsed (issue 7)', () => {
+    const lino = vectorizeShape('tee', { penLifts: false }).lino;
+    const [document] = new Parser().parse(lino);
+    const ids = document.values.map((link) => link.id);
+
+    expect(document.id).toBe('vectorization');
+    expect(ids.includes('network')).toBe(true);
+    expect(ids.includes('strokes')).toBe(true);
+    expect(lino.includes('    stroke1:\n      points (')).toBe(true);
+    expect(lino.includes('        l')).toBe(true);
   });
 });
 
@@ -174,6 +209,25 @@ describe('MNIST samples are fully vectorized (issue 5)', () => {
 });
 
 describe('LinksStore doublet storage', () => {
+  it('names the result a stroke network of points and links (issue 7)', () => {
+    const result = vectorizeShape('six');
+    const json = JSON.parse(JSON.stringify(result));
+    const [step] = result.strokes[0].steps;
+
+    expect(result.network.points.length > 0).toBe(true);
+    expect(result.network.links.length).toBe(result.links.links().length);
+    expect(json.graph).toBe(undefined);
+    expect(json.coverage.edges).toBe(undefined);
+    expect(json.strokes[0].steps[0].edge).toBe(undefined);
+    expect(json.strokes[0].steps[0].link).toBe(step.link);
+    // Deprecated names from before issue 7 still read the same data.
+    expect(result.graph.nodes).toBe(result.network.points);
+    expect(result.graph.edges).toBe(result.network.links);
+    expect(result.coverage.edges).toBe(result.coverage.links);
+    expect(step.edge).toBe(step.link);
+    expect(result.links.edges()).toEqual(result.links.links());
+  });
+
   it('creates, searches, updates and deletes links', () => {
     const store = new LinksStore();
     const a = store.createPoint({ x: 0, y: 0 });
@@ -192,10 +246,10 @@ describe('LinksStore doublet storage', () => {
 
     store.delete(edge);
     expect(store.has(edge)).toBe(false);
-    expect(store.edges()).toEqual([]);
+    expect(store.links()).toEqual([]);
   });
 
-  it('plans an Euler trail over a hand-built graph', () => {
+  it('plans an Euler trail over a hand-built network', () => {
     const store = new LinksStore();
     const node = (x, y) => store.createPoint({ x, y, pixels: [] });
     const link = (source, target) => {
@@ -226,6 +280,6 @@ describe('LinksStore doublet storage', () => {
     expect(stroke.start).toBe(left);
     expect(stroke.steps.at(-1).to).toBe(right);
     expect(stroke.steps.length).toBe(4);
-    expect(retraced.map((step) => step.edge)).toEqual([stem]);
+    expect(retraced.map((step) => step.link)).toEqual([stem]);
   });
 });

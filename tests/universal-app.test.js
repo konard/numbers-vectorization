@@ -4,6 +4,8 @@ import { existsSync, readFileSync } from 'node:fs';
 const exampleRoot = 'examples/universal-app';
 const packageJsonPath = `${exampleRoot}/package.json`;
 const appSourcePath = `${exampleRoot}/src/App.js`;
+const drawingSourcePath = `${exampleRoot}/src/DrawingCanvas.js`;
+const settingsPanelPath = `${exampleRoot}/src/SettingsPanel.js`;
 const mnistSamplesPath = `${exampleRoot}/src/mnistSamples.js`;
 const viteConfigPath = `${exampleRoot}/vite.config.js`;
 const capacitorConfigPath = `${exampleRoot}/capacitor.config.json`;
@@ -50,21 +52,42 @@ describe('universal React example app', () => {
 
   it('renders the raster vectorization UI using package functions and MNIST data', () => {
     const appSource = readText(appSourcePath);
+    const drawingSource = readText(drawingSourcePath);
     const sampleSource = readText(mnistSamplesPath);
 
     expect(appSource).toContain("from '../../../src/index.js'");
     expect(appSource).toContain('vectorizeRasterLine(activeRaster');
     expect(appSource).toContain("from './mnistSamples.js'");
-    expect(appSource).toContain(
+    expect(appSource).toContain("from './DrawingCanvas.js'");
+    expect(drawingSource).toContain(
       'getImageData(0, 0, DRAWING_SIZE, DRAWING_SIZE)'
     );
-    expect(appSource).toContain('onPointerDown');
+    expect(drawingSource).toContain('onPointerDown');
     expect(appSource).toContain('MNIST');
     expect(appSource).toContain('SVG');
 
     expect(sampleSource).toContain('MNIST_SAMPLE_COUNT = 50');
     expect(sampleSource).toContain('MNIST_SAMPLE_LABELS');
     expect(sampleSource).toContain('MNIST_SAMPLE_PIXELS_BASE64');
+  });
+
+  it('records pen movement and offers every setting as Auto or manual (issue 7)', () => {
+    const appSource = readText(appSourcePath);
+    const drawingSource = readText(drawingSourcePath);
+    const settingsSource = readText(settingsPanelPath);
+
+    expect(drawingSource).toContain('beginPenStroke(');
+    expect(drawingSource).toContain('extendPenStroke(');
+    expect(drawingSource).toContain('getCoalescedEvents');
+    expect(drawingSource).toContain('penRecordingSegments(');
+    expect(drawingSource).toContain('penRecordingToLinksNotation(');
+    expect(drawingSource).toContain('parsePenRecording(');
+    expect(drawingSource).toContain('Replay');
+    expect(drawingSource).toContain('Save JSON');
+    expect(appSource).toContain('settingsToOptions(settings)');
+    expect(appSource).toContain('settingsFromOptions(options)');
+    expect(settingsSource).toContain('NUMBER_SETTINGS.map(');
+    expect(settingsSource).toContain('All auto');
   });
 
   it('shares the Vite build output with Capacitor and GitHub Pages', () => {

@@ -1,0 +1,7 @@
+gap 30: 3 n / 3 e, 1 strokes, 15 pts, retrace 0.0, mask 0.996
+gap 20: 3 n / 3 e, 1 strokes, 12 pts, retrace 0.0, mask 0.996
+gap 14: 3 n / 3 e, 1 strokes, 10 pts, retrace 0.0, mask 0.998
+gap 10: 3 n / 3 e, 1 strokes, 10 pts, retrace 0.0, mask 0.998
+gap 6: 3 n / 3 e, 1 strokes, 9 pts, retrace 0.0, mask 0.998
+gap 3: 3 n / 3 e, 1 strokes, 10 pts, retrace 0.0, mask 0.998
+gap 0: 4 n / 3 e, 2 strokes, 9 pts, retrace 0.0, mask 0.997

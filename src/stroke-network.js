@@ -1,4 +1,11 @@
 import { leavingDirection, polylineLength } from './geometry.js';
+import {
+  bend,
+  continuationReach,
+  linkEnds,
+  MAX_CONTINUATION_BEND,
+} from './continuation.js';
+import { collapseLassoStems, foldFusedSpurs } from './hairpin.js';
 import { LinksStore } from './links-store.js';
 
 const FOUR_OFFSETS = [
@@ -229,7 +236,7 @@ function nodeRadius(store, node, distances) {
 function pruneSpurs(store, options) {
   const spursByJunction = new Map();
 
-  for (const edge of store.edges()) {
+  for (const edge of store.links()) {
     if (isLoop(store, edge)) {
       continue;
     }
@@ -333,16 +340,30 @@ function contractEdge(store, edge) {
   store.incident(keep).forEach((other) => setEdgeEnd(store, other, keep));
 }
 
-function findShortJunctionEdge(store, limit) {
-  return store.edges().find((edge) => {
+function findShortJunctionEdge(store, options) {
+  const { junctionLength, distances } = options;
+
+  return store.links().find((edge) => {
     const { source, target } = store.get(edge);
 
-    return (
-      source !== target &&
-      store.degree(source) >= 3 &&
-      store.degree(target) >= 3 &&
-      store.getData(edge).length < limit
+    if (
+      source === target ||
+      store.degree(source) < 3 ||
+      store.degree(target) < 3
+    ) {
+      return false;
+    }
+
+    // Two junctions whose maximal ink disks contain each other's centre are
+    // one junction region of the medial axis (a narrow loop whose lines fuse
+    // where they meet the bar, two strokes crossing at a shallow angle).
+    const limit = Math.max(
+      junctionLength,
+      nodeRadius(store, source, distances) - 0.5,
+      nodeRadius(store, target, distances) - 0.5
     );
+
+    return store.getData(edge).length < limit;
   });
 }
 
@@ -351,14 +372,14 @@ function findShortJunctionEdge(store, limit) {
  * T-junctions a pixel or two apart, and leaves tiny loops around pinholes.
  */
 function contractJunctions(store, options) {
-  let edge = findShortJunctionEdge(store, options.junctionLength);
+  let edge = findShortJunctionEdge(store, options);
 
   while (edge !== undefined) {
     contractEdge(store, edge);
-    edge = findShortJunctionEdge(store, options.junctionLength);
+    edge = findShortJunctionEdge(store, options);
   }
 
-  for (const loop of store.edges().filter((id) => isLoop(store, id))) {
+  for (const loop of store.links().filter((id) => isLoop(store, id))) {
     const node = store.get(loop).source;
 
     if (
@@ -367,6 +388,62 @@ function contractJunctions(store, options) {
     ) {
       store.delete(loop);
     }
+  }
+}
+
+/**
+ * Whether the ends `first` and `second` (two link ends each) continue each
+ * other in two straight pairs, one end of each side in each pair.
+ */
+function crossesStraight(first, second) {
+  const straight = (a, b) => bend(a, b) <= MAX_CONTINUATION_BEND;
+
+  return (
+    (straight(first[0], second[0]) && straight(first[1], second[1])) ||
+    (straight(first[0], second[1]) && straight(first[1], second[0]))
+  );
+}
+
+function findSplitCrossing(store, options) {
+  const { crossingLength, reach } = options;
+
+  return store.links().find((edge) => {
+    const { source, target } = store.get(edge);
+
+    if (
+      source === target ||
+      store.degree(source) !== 3 ||
+      store.degree(target) !== 3 ||
+      store.getData(edge).length >= crossingLength
+    ) {
+      return false;
+    }
+
+    const outer = (node) =>
+      linkEnds(store, node, reach).filter((end) => end.edge !== edge);
+    const first = outer(source);
+    const second = outer(target);
+
+    return (
+      first.length === 2 &&
+      second.length === 2 &&
+      crossesStraight(first, second)
+    );
+  });
+}
+
+/**
+ * Join the two halves of an "X" crossing. Two lines crossing at an angle thin
+ * into two T-junctions joined by a short link; when the four outer links
+ * continue each other straight across that link in two pairs, the junctions
+ * are one crossing, so the pen can draw each line straight through it.
+ */
+function contractCrossings(store, options) {
+  let edge = findSplitCrossing(store, options);
+
+  while (edge !== undefined) {
+    contractEdge(store, edge);
+    edge = findSplitCrossing(store, options);
   }
 }
 
@@ -467,19 +544,21 @@ export function estimateSkeletonStrokeWidth(skeleton, distances) {
 }
 
 /**
- * Turn a one-pixel skeleton into a stroke graph stored as doublet links.
+ * Turn a one-pixel skeleton into a stroke network stored as doublet links.
  *
- * Nodes are endpoints, junctions, isolated dots and loop anchors; edges are
- * the pixel chains between them. The raw graph is then cleaned up: spurs are
- * pruned, short junction-to-junction links contracted, degree-2 nodes merged
- * and free stroke ends extended back to the ink boundary.
+ * Points are endpoints, junctions, isolated dots and loop anchors; links are
+ * the pixel chains between them. The raw network is then cleaned up: spurs are
+ * pruned, short junction-to-junction links contracted, degree-2 points merged
+ * and free stroke ends extended back to the ink boundary. Ink wider than one
+ * pen line that hangs from a junction (a lasso stem or a thick dead end) is
+ * explained as the narrow loop it was drawn as.
  *
  * @param {{ skeleton: Uint8Array, mask: Uint8Array, width: number,
  * height: number, distances: Float64Array, strokeWidth: number }} input -
  * Skeleton, source mask, distance transform and estimated pen width.
- * @returns {LinksStore} Stroke graph links.
+ * @returns {LinksStore} Stroke network links.
  */
-export function buildStrokeGraph(input) {
+export function buildStrokeNetwork(input) {
   const { skeleton, width, height, strokeWidth } = input;
   const store = new LinksStore();
   const adjacency = buildAdjacency(skeleton, width, height);
@@ -487,7 +566,7 @@ export function buildStrokeGraph(input) {
   const halfWidth = strokeWidth / 2;
 
   // Optional tracing hook (off by default) used by experiments to inspect
-  // every rewriting stage of the stroke graph.
+  // every rewriting stage of the stroke network.
   const trace = input.trace ?? (() => {});
 
   traceEdges(adjacency, clusterOf, width, store);
@@ -499,10 +578,16 @@ export function buildStrokeGraph(input) {
   trace('pruned', store);
   mergeDegreeTwoNodes(store);
   contractJunctions(store, {
+    distances: input.distances,
     junctionLength: Math.max(2, halfWidth),
     loopLength: Math.max(4, strokeWidth * 2),
   });
   mergeDegreeTwoNodes(store);
+  contractCrossings(store, {
+    crossingLength: strokeWidth * 2,
+    reach: continuationReach(strokeWidth),
+  });
+  collapseLassoStems(store, input);
   trace('contracted', store);
   extendEndpoints(store, {
     mask: input.mask,
@@ -512,6 +597,8 @@ export function buildStrokeGraph(input) {
     halfWidth,
   });
   trace('extended', store);
+  foldFusedSpurs(store, input);
+  trace('folded', store);
 
   return store;
 }

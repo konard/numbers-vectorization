@@ -3,6 +3,18 @@ import { pointSegmentDistance } from './geometry.js';
 const CELL_SIZE = 4;
 
 /**
+ * Line segments of polylines. A one-point polyline (a dot) is a segment of
+ * zero length.
+ */
+export function polylineSegments(polylines) {
+  return polylines.flatMap((points) =>
+    points.length === 1
+      ? [[points[0], points[0]]]
+      : points.slice(1).map((point, index) => [points[index], point])
+  );
+}
+
+/**
  * Bucket line segments into a coarse grid so "is this point within `margin`
  * of the path?" queries only test nearby segments.
  *

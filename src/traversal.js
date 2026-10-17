@@ -1,11 +1,14 @@
+import { continuationPairs, linkEnds } from './continuation.js';
 import { angleBetween, leavingDirection } from './geometry.js';
+import { LinksStore } from './links-store.js';
 
 const MAX_EXACT_PAIRING_NODES = 16;
 // Writers usually start a closed loop at its top and move counter-clockwise,
 // i.e. down and to the left.
 const START_DIRECTION = { x: -1, y: 1 };
 
-function connectedComponents(store) {
+/** Connected components of the stroke network: separate shapes. */
+export function connectedComponents(store) {
   const parent = new Map(store.points().map((node) => [node, node]));
   const find = (node) => {
     let root = node;
@@ -18,7 +21,7 @@ function connectedComponents(store) {
     return root;
   };
 
-  for (const edge of store.edges()) {
+  for (const edge of store.links()) {
     const { source, target } = store.get(edge);
     parent.set(find(source), find(target));
   }
@@ -38,7 +41,7 @@ function connectedComponents(store) {
   }));
 }
 
-/** Single-source shortest paths (Dijkstra) over the stroke graph. */
+/** Single-source shortest paths (Dijkstra) over the stroke network. */
 function shortestPaths(store, nodes, source) {
   const distance = new Map(nodes.map((node) => [node, Infinity]));
   const via = new Map();
@@ -150,7 +153,7 @@ function exactPairing(costs) {
   return solve((1 << count) - 1, true);
 }
 
-/** Greedy closest-pair matching for graphs with very many odd nodes. */
+/** Greedy closest-pair matching for networks with very many odd points. */
 function greedyPairing(costs) {
   const candidates = [];
 
@@ -293,7 +296,7 @@ function orientations(store, copy, from) {
 }
 
 function stepPoints(store, step) {
-  const { points } = store.getData(step.edge);
+  const { points } = store.getData(step.link);
 
   return step.reversed ? [...points].reverse() : points;
 }
@@ -308,7 +311,7 @@ function candidateSteps(store, copies, current) {
   return (safe.length > 0 ? safe : available).flatMap((copy) =>
     orientations(store, copy, current).map((reversed) => ({
       copy,
-      edge: copy.edge,
+      link: copy.edge,
       from: current,
       to: store.other(copy.edge, current),
       reversed,
@@ -353,10 +356,10 @@ function eulerTrail(store, copies, start, lookAhead) {
     }
 
     best.copy.used = true;
-    const count = usage.get(best.edge) ?? 0;
-    usage.set(best.edge, count + 1);
+    const count = usage.get(best.link) ?? 0;
+    usage.set(best.link, count + 1);
     steps.push({
-      edge: best.edge,
+      link: best.link,
       from: best.from,
       to: best.to,
       reversed: best.reversed,
@@ -370,36 +373,159 @@ function eulerTrail(store, copies, start, lookAhead) {
 }
 
 /**
- * Plan the pen strokes for a stroke graph: one continuous stroke per
- * connected component that traverses every edge at least once, retracing the
- * minimum possible length.
+ * A copy of one component of the stroke network in which the pen goes
+ * straight through its crossings: at every junction, each pair of links that
+ * continue each other gets its own pass-through point, so a "+" or an "x"
+ * falls apart into its two lines and the bar of a "T" leaves the stem. The
+ * link ids are kept; `real` maps the new points back to the junctions.
+ */
+function penLiftNetwork(store, component, reach) {
+  const view = new LinksStore();
+  const real = new Map();
+  const put = (id, source, target) => {
+    view.records.set(id, { id, source, target });
+    view.index(id, source, target);
+    view.data.set(id, store.getData(id));
+  };
+
+  component.nodes.forEach((node) => put(node, node, node));
+  component.edges.forEach((edge) => {
+    const { source, target } = store.get(edge);
+    put(edge, source, target);
+  });
+  view.nextId = store.nextId;
+
+  for (const node of component.nodes) {
+    if (store.degree(node) < 3) {
+      continue;
+    }
+
+    const ends = linkEnds(store, node, reach);
+
+    for (const pair of continuationPairs(ends)) {
+      const pass = view.createPoint(store.getData(node));
+      real.set(pass, node);
+
+      for (const { edge, end } of pair.map((index) => ends[index])) {
+        const link = view.get(edge);
+        view.update(
+          edge,
+          end === 'source' ? pass : link.source,
+          end === 'target' ? pass : link.target
+        );
+      }
+    }
+
+    if (view.degree(node) === 0) {
+      view.delete(node);
+    }
+  }
+
+  return { view, real };
+}
+
+function retraceLength(store, plans) {
+  return plans
+    .flatMap((plan) => plan.retraces)
+    .reduce((sum, edge) => sum + store.getData(edge).length, 0);
+}
+
+function planComponents(store, components, lookAhead) {
+  const plans = components.map((component) => ({
+    component,
+    ...planRetraces(store, component),
+  }));
+
+  return {
+    plans,
+    retrace: retraceLength(store, plans),
+    trails: () =>
+      plans.map(({ component, retraces, start }) => ({
+        start,
+        steps: eulerTrail(
+          store,
+          createCopies(component, retraces),
+          start,
+          lookAhead
+        ),
+      })),
+  };
+}
+
+function realStroke(stroke, real) {
+  const realNode = (node) => real.get(node) ?? node;
+
+  return {
+    start: realNode(stroke.start),
+    steps: stroke.steps.map((step) => ({
+      ...step,
+      from: realNode(step.from),
+      to: realNode(step.to),
+    })),
+  };
+}
+
+/**
+ * Plan the strokes of one connected component. One stroke that retraces is
+ * the plan of the Chinese postman; when lifting the pen at the crossings
+ * saves more retracing than the pen lifts cost, the simpler explanation wins:
+ * the lines of a "+", an "x" or the bar of a "7" are separate strokes, each
+ * straight through the crossing.
+ */
+function planComponent(store, component, options) {
+  const { lookAhead, reach, liftCost } = options;
+  const single = planComponents(store, [component], lookAhead);
+
+  if (single.retrace === 0 || !(liftCost < Infinity)) {
+    return single.trails();
+  }
+
+  const { view, real } = penLiftNetwork(store, component, reach);
+  const lifted = planComponents(view, connectedComponents(view), lookAhead);
+  const lifts = lifted.plans.length - 1;
+
+  return single.retrace - lifted.retrace > lifts * liftCost
+    ? lifted.trails().map((stroke) => realStroke(stroke, real))
+    : single.trails();
+}
+
+/**
+ * Plan the pen strokes for a stroke network: every link is drawn at least
+ * once, by one continuous stroke per connected component that retraces the
+ * minimum possible length, unless lifting the pen where lines cross each
+ * other saves more retracing than the pen lifts cost.
  *
- * @param {import('./links-store.js').LinksStore} store - Stroke graph.
- * @param {{ lookAhead?: number }} [options] - Tangent look-ahead in pixels.
+ * @param {import('./links-store.js').LinksStore} store - Stroke network.
+ * @param {{ lookAhead?: number, reach?: number, liftCost?: number }}
+ * [options] - Tangent look-ahead, the reach of the crossing directions and
+ * the retrace length one pen lift is worth, in pixels (`Infinity` keeps one
+ * stroke per connected component).
  * @returns {{ start: number, steps: { edge: number, from: number, to: number,
  * reversed: boolean, retrace: boolean }[] }[]} Strokes in drawing order.
  */
 export function planStrokes(store, options = {}) {
   const lookAhead = options.lookAhead ?? 3;
-  const strokes = connectedComponents(store).map((component) => {
-    const plan = planRetraces(store, component);
-    const copies = createCopies(component, plan.retraces);
-
-    return {
-      start: plan.start,
-      steps: eulerTrail(store, copies, plan.start, lookAhead),
-    };
-  });
-
-  return strokes.sort(
-    (a, b) => topLeftScore(store, a.start) - topLeftScore(store, b.start)
+  const settings = {
+    lookAhead,
+    reach: options.reach ?? lookAhead * 3,
+    liftCost: options.liftCost ?? lookAhead,
+  };
+  const strokes = connectedComponents(store).flatMap((component) =>
+    planComponent(store, component, settings)
   );
+
+  // Strokes are written from the top left: the one reaching closest to the
+  // top-left corner first (the apex of an "A" comes before its bar).
+  const topLeft = (stroke) =>
+    Math.min(...strokePoints(store, stroke).map(({ x, y }) => x + y));
+
+  return strokes.sort((a, b) => topLeft(a) - topLeft(b));
 }
 
 /**
  * Concatenate the per-edge polylines of a planned stroke.
  *
- * @param {import('./links-store.js').LinksStore} store - Stroke graph.
+ * @param {import('./links-store.js').LinksStore} store - Stroke network.
  * @param {{ start: number, steps: object[] }} stroke - Planned stroke.
  * @param {string} [key] - Edge data key holding the polyline.
  * @returns {{ x: number, y: number }[]} Stroke points.
@@ -412,8 +538,8 @@ export function strokePoints(store, stroke, key = 'points') {
   const points = [];
 
   stroke.steps.forEach((step) => {
-    const edgePoints = store.getData(step.edge)[key];
-    const oriented = step.reversed ? [...edgePoints].reverse() : edgePoints;
+    const linkPoints = store.getData(step.link)[key];
+    const oriented = step.reversed ? [...linkPoints].reverse() : linkPoints;
     points.push(...(points.length === 0 ? oriented : oriented.slice(1)));
   });
 

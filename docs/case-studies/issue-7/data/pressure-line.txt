@@ -1,0 +1,6 @@
+wide 6: 2 n / 1 e, 0 completed, retrace 0, mask 1.000
+wide 8: 2 n / 1 e, 0 completed, retrace 0, mask 0.912
+wide 10: 2 n / 1 e, 0 completed, retrace 0, mask 0.810
+wide 12: 2 n / 1 e, 0 completed, retrace 0, mask 0.722
+wide 14: 2 n / 1 e, 0 completed, retrace 0, mask 0.696
+wide 18: 2 n / 1 e, 0 completed, retrace 0, mask 0.746

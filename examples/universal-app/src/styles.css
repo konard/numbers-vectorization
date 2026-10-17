@@ -365,6 +365,83 @@ h1 {
   min-height: 36px;
 }
 
+.range-control label {
+  color: #4c5b66;
+}
+
+.range-auto strong {
+  color: #255f85;
+}
+
+.range-control .auto-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.range-control .auto-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #31404c;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.range-control .auto-switch input {
+  width: auto;
+}
+
+.range-control input:disabled {
+  opacity: 0.45;
+}
+
+.clear-button:disabled {
+  opacity: 0.5;
+}
+
+.recording-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.recording-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.file-button input {
+  display: none;
+}
+
+.recording-text summary {
+  color: #31404c;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.recording-text pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 8px 0 0;
+  border-radius: 8px;
+  padding: 10px;
+  color: #1e303c;
+  background: #f3f6f8;
+  font-size: 0.75rem;
+}
+
 .settings-note {
   margin: 0;
   color: #4c5b66;
@@ -394,7 +471,7 @@ h1 {
   max-width: 100%;
 }
 
-.graph-view,
+.network-view,
 .replay-view {
   display: grid;
   gap: 10px;
@@ -402,35 +479,35 @@ h1 {
   justify-items: center;
 }
 
-.graph-edge {
+.network-link {
   stroke: #255f85;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.graph-edge-retraced {
+.network-link-retraced {
   stroke: #b84d3e;
 }
 
-.graph-edge-completed {
+.network-link-completed {
   stroke: #2f8068;
 }
 
-.graph-node {
+.network-point {
   fill: #ffffff;
   stroke: #31404c;
   stroke-width: 0.3;
 }
 
-.graph-node-end {
+.network-point-end {
   fill: #255f85;
 }
 
-.graph-node-junction {
+.network-point-junction {
   fill: #b7791f;
 }
 
-.graph-legend {
+.network-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -443,13 +520,13 @@ h1 {
   list-style: none;
 }
 
-.graph-legend li {
+.network-legend li {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 
-.graph-legend span {
+.network-legend span {
   display: inline-block;
   width: 11px;
   height: 11px;

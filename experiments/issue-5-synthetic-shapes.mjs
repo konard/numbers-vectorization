@@ -11,8 +11,8 @@ for (const [name, rows] of Object.entries(SHAPES)) {
       strokes: result.strokes.length,
       steps: result.strokes.map((s) => s.steps.length),
       retrace: result.strokes.map((s) => s.retraceLength),
-      nodes: result.graph.nodes.map((n) => n.degree).join(','),
-      edges: `${result.coverage.edges.traversed}/${result.coverage.edges.total}`,
+      nodes: result.network.points.map((n) => n.degree).join(','),
+      edges: `${result.coverage.links.traversed}/${result.coverage.links.total}`,
       skeleton: result.coverage.skeleton,
       mask: Number(result.coverage.mask.toFixed(3)),
     })

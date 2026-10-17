@@ -5,20 +5,25 @@
  *
  * Everything is a link `(id: source target)`:
  *
- * - a *point* is a self-referencing link `(id: id id)` and represents a stroke
- *   graph node (an endpoint, a junction, or a loop anchor);
- * - an *edge* is a doublet `(id: source target)` between two points and
- *   represents one skeleton branch. A loop is simply `(id: point point)`.
+ * - a *point* is a self-referencing link `(id: id id)` and represents a place
+ *   where the pen starts, stops or meets itself (an end, a junction, or a
+ *   loop anchor);
+ * - a *link* between points is a doublet `(id: source target)` whose source
+ *   and target reference those points; it represents one skeleton branch. A
+ *   loop is simply `(id: point point)`.
  *
- * Payload (coordinates, pixel chains) is kept in a side table keyed by link
- * id, so the link structure itself stays a pure doublet graph that can be
- * queried by source and target. Graph rewriting (spur pruning, junction
- * contraction, degree-2 merging) is expressed as plain `update` and `delete`
- * operations on links.
+ * Together they form the stroke network: a links network, not a graph. Links
+ * reference other links (a point references itself), so a step of a pen
+ * stroke can in turn be a link referencing the link it walks. Payload
+ * (coordinates, pixel chains) is kept in a side table keyed by link id, so the
+ * link structure itself stays pure doublets that can be queried by source and
+ * target. Rewriting the network (spur pruning, junction contraction, merging
+ * pass-through points) is expressed as plain `update` and `delete` operations
+ * on links.
  */
 export class LinksStore {
   constructor() {
-    this.links = new Map();
+    this.records = new Map();
     this.data = new Map();
     this.bySource = new Map();
     this.byTarget = new Map();
@@ -50,7 +55,7 @@ export class LinksStore {
   create(source, target, data) {
     const id = this.nextId;
     this.nextId += 1;
-    this.links.set(id, { id, source, target });
+    this.records.set(id, { id, source, target });
     this.index(id, source, target);
 
     if (data !== undefined) {
@@ -67,7 +72,7 @@ export class LinksStore {
   createPoint(data) {
     const id = this.nextId;
     this.nextId += 1;
-    this.links.set(id, { id, source: id, target: id });
+    this.records.set(id, { id, source: id, target: id });
     this.index(id, id, id);
 
     if (data !== undefined) {
@@ -78,11 +83,11 @@ export class LinksStore {
   }
 
   get(id) {
-    return this.links.get(id);
+    return this.records.get(id);
   }
 
   has(id) {
-    return this.links.has(id);
+    return this.records.has(id);
   }
 
   getData(id) {
@@ -94,12 +99,12 @@ export class LinksStore {
   }
 
   isPoint(id) {
-    const link = this.links.get(id);
+    const link = this.records.get(id);
     return Boolean(link) && link.source === id && link.target === id;
   }
 
   update(id, source, target) {
-    const link = this.links.get(id);
+    const link = this.records.get(id);
 
     if (!link) {
       throw new RangeError(`Link ${id} does not exist.`);
@@ -114,14 +119,14 @@ export class LinksStore {
   }
 
   delete(id) {
-    const link = this.links.get(id);
+    const link = this.records.get(id);
 
     if (!link) {
       return false;
     }
 
     this.unindex(id, link.source, link.target);
-    this.links.delete(id);
+    this.records.delete(id);
     this.data.delete(id);
 
     return true;
@@ -140,31 +145,36 @@ export class LinksStore {
       ids = [...(this.bySource.get(source) ?? [])];
 
       if (target !== undefined) {
-        ids = ids.filter((id) => this.links.get(id).target === target);
+        ids = ids.filter((id) => this.records.get(id).target === target);
       }
     } else if (target !== undefined) {
       ids = [...(this.byTarget.get(target) ?? [])];
     } else {
-      ids = [...this.links.keys()];
+      ids = [...this.records.keys()];
     }
 
     return ids.sort((a, b) => a - b);
   }
 
-  /** All point (node) ids. */
+  /** All point ids (self-referencing links). */
   points() {
     return this.search().filter((id) => this.isPoint(id));
   }
 
-  /** All non-point (edge) ids. */
-  edges() {
+  /** All ids of links between points (not points themselves). */
+  links() {
     return this.search().filter((id) => !this.isPoint(id));
   }
 
+  /** @deprecated Use `links()`: the stroke network is not a graph. */
+  edges() {
+    return this.links();
+  }
+
   /**
-   * Edge ids touching a point. A loop edge is returned once.
+   * Ids of the links referencing a point. A loop is returned once.
    * @param {number} point - Point id.
-   * @returns {number[]} Incident edge ids.
+   * @returns {number[]} Incident link ids.
    */
   incident(point) {
     const ids = new Set([
@@ -177,24 +187,24 @@ export class LinksStore {
   }
 
   /**
-   * Graph degree of a point; loops count twice.
+   * How many link ends reference a point; loops count twice.
    * @param {number} point - Point id.
    * @returns {number} Degree.
    */
   degree(point) {
     return this.incident(point).reduce((sum, id) => {
-      const link = this.links.get(id);
+      const link = this.records.get(id);
       return sum + (link.source === link.target ? 2 : 1);
     }, 0);
   }
 
-  /** The opposite end of `edge` as seen from `point`. */
-  other(edge, point) {
-    const link = this.links.get(edge);
+  /** The opposite end of link `id` as seen from `point`. */
+  other(id, point) {
+    const link = this.records.get(id);
     return link.source === point ? link.target : link.source;
   }
 
   get size() {
-    return this.links.size;
+    return this.records.size;
   }
 }
