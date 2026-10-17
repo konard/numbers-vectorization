@@ -15,7 +15,7 @@ import {
   MNIST_SAMPLE_WIDTH,
 } from './mnistSamples.js';
 import { IMAGE_SIZE, ImageInput } from './ImageInput.js';
-import { LinoView, StrokeGraphView, StrokeReplay } from './StrokeViews.js';
+import { LinoView, StrokeNetworkView, StrokeReplay } from './StrokeViews.js';
 
 const DRAWING_SIZE = 280;
 const EMPTY_DRAWING_PIXELS = new Uint8ClampedArray(
@@ -426,8 +426,8 @@ function Metrics({ result, source }) {
     ['Source', source],
     ['Strokes', result.strokes.length],
     [
-      'Graph',
-      `${result.graph.nodes.length} n / ${result.graph.edges.length} e`,
+      'Network',
+      `${result.network.points.length} p / ${result.network.links.length} l`,
     ],
     ['Retrace', `${retrace.toFixed(1)} px`],
     ['Ink covered', percent(result.coverage.mask)],
@@ -494,9 +494,9 @@ function ResultPanels({ result, activeRaster, curve }) {
       h(SkeletonView, { result }),
     ],
     [
-      'Stroke graph',
-      `${result.graph.nodes.length} nodes, ${result.graph.edges.length} edges`,
-      h(StrokeGraphView, { result }),
+      'Stroke network',
+      `${result.network.points.length} points, ${result.network.links.length} links`,
+      h(StrokeNetworkView, { result }),
     ],
     [
       'Stroke order',
@@ -506,7 +506,7 @@ function ResultPanels({ result, activeRaster, curve }) {
     ['SVG', `${result.points.length} pts`, h(VectorView, { result })],
     [
       'Links Notation',
-      `${result.lino.split('\n').length} links`,
+      `${result.lino.split('\n').length - 1} lines`,
       h(LinoView, { result }),
     ],
   ];

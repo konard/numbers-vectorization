@@ -74,7 +74,7 @@ export function renderNetwork(result, { scale = 2, strokes = false } = {}) {
       drawDot(paint, scaled(stroke.points[0]), color, dot + 1);
     });
   } else {
-    const network = result.network ?? result.graph;
+    const network = result.network;
     network.edges.forEach((edge) =>
       drawPolyline(paint, edge.points.map(scaled), [210, 40, 40])
     );

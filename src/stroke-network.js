@@ -236,7 +236,7 @@ function nodeRadius(store, node, distances) {
 function pruneSpurs(store, options) {
   const spursByJunction = new Map();
 
-  for (const edge of store.edges()) {
+  for (const edge of store.links()) {
     if (isLoop(store, edge)) {
       continue;
     }
@@ -343,7 +343,7 @@ function contractEdge(store, edge) {
 function findShortJunctionEdge(store, options) {
   const { junctionLength, distances } = options;
 
-  return store.edges().find((edge) => {
+  return store.links().find((edge) => {
     const { source, target } = store.get(edge);
 
     if (
@@ -379,7 +379,7 @@ function contractJunctions(store, options) {
     edge = findShortJunctionEdge(store, options);
   }
 
-  for (const loop of store.edges().filter((id) => isLoop(store, id))) {
+  for (const loop of store.links().filter((id) => isLoop(store, id))) {
     const node = store.get(loop).source;
 
     if (
@@ -407,7 +407,7 @@ function crossesStraight(first, second) {
 function findSplitCrossing(store, options) {
   const { crossingLength, reach } = options;
 
-  return store.edges().find((edge) => {
+  return store.links().find((edge) => {
     const { source, target } = store.get(edge);
 
     if (
@@ -544,11 +544,11 @@ export function estimateSkeletonStrokeWidth(skeleton, distances) {
 }
 
 /**
- * Turn a one-pixel skeleton into a stroke graph stored as doublet links.
+ * Turn a one-pixel skeleton into a stroke network stored as doublet links.
  *
- * Nodes are endpoints, junctions, isolated dots and loop anchors; edges are
- * the pixel chains between them. The raw graph is then cleaned up: spurs are
- * pruned, short junction-to-junction links contracted, degree-2 nodes merged
+ * Points are endpoints, junctions, isolated dots and loop anchors; links are
+ * the pixel chains between them. The raw network is then cleaned up: spurs are
+ * pruned, short junction-to-junction links contracted, degree-2 points merged
  * and free stroke ends extended back to the ink boundary. Ink wider than one
  * pen line that hangs from a junction (a lasso stem or a thick dead end) is
  * explained as the narrow loop it was drawn as.
@@ -556,9 +556,9 @@ export function estimateSkeletonStrokeWidth(skeleton, distances) {
  * @param {{ skeleton: Uint8Array, mask: Uint8Array, width: number,
  * height: number, distances: Float64Array, strokeWidth: number }} input -
  * Skeleton, source mask, distance transform and estimated pen width.
- * @returns {LinksStore} Stroke graph links.
+ * @returns {LinksStore} Stroke network links.
  */
-export function buildStrokeGraph(input) {
+export function buildStrokeNetwork(input) {
   const { skeleton, width, height, strokeWidth } = input;
   const store = new LinksStore();
   const adjacency = buildAdjacency(skeleton, width, height);
@@ -566,7 +566,7 @@ export function buildStrokeGraph(input) {
   const halfWidth = strokeWidth / 2;
 
   // Optional tracing hook (off by default) used by experiments to inspect
-  // every rewriting stage of the stroke graph.
+  // every rewriting stage of the stroke network.
   const trace = input.trace ?? (() => {});
 
   traceEdges(adjacency, clusterOf, width, store);

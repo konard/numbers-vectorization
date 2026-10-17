@@ -210,7 +210,7 @@ function sideOf(from, to, point) {
  * and comes back: the stem becomes the loop's two sides.
  */
 export function collapseLassoStems(store, input) {
-  for (const loop of store.edges().filter((id) => isLoop(store, id))) {
+  for (const loop of store.links().filter((id) => isLoop(store, id))) {
     const node = store.get(loop).source;
     const incident = store.incident(node);
     const stem = incident.find((edge) => edge !== loop);
@@ -292,7 +292,7 @@ function reachTip(spine, input) {
  * where it started, so no retrace is needed either.
  */
 export function foldFusedSpurs(store, input) {
-  for (const edge of store.edges()) {
+  for (const edge of store.links()) {
     const { source, target } = store.get(edge);
     const tip = [source, target].find((node) => store.degree(node) === 1);
     const base = store.other(edge, tip ?? source);

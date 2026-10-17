@@ -255,7 +255,9 @@ describe('vectorize CLI command', () => {
       expect(svg.code).toBe(0);
       expect(svg.stdout.startsWith('<svg')).toBe(true);
       expect(JSON.parse(json.stdout).coverage.skeleton).toBe(1);
-      expect(lino.stdout.startsWith('(raster: size 28 28)')).toBe(true);
+      expect(lino.stdout.startsWith('vectorization:\n  raster 28 28')).toBe(
+        true
+      );
     }
   });
 

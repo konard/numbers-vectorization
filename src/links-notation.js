@@ -1,11 +1,13 @@
 import { formatNumber } from './geometry.js';
 
-function nodeName(id) {
-  return `n${id}`;
+const INDENT = '  ';
+
+function pointName(id) {
+  return `p${id}`;
 }
 
-function edgeName(id) {
-  return `e${id}`;
+function linkName(id) {
+  return `l${id}`;
 }
 
 function pointList(points) {
@@ -14,59 +16,100 @@ function pointList(points) {
     .join(' ');
 }
 
+function stepLine(step) {
+  return `${linkName(step.link)} ${pointName(step.from)} ${pointName(step.to)}${
+    step.retrace ? ' retrace' : ''
+  }`;
+}
+
 /**
- * Export a vectorization result as Links Notation (https://github.com/link-foundation/links-notation).
+ * Write an indented tree of `[line, children]` entries.
+ * @param {Array<string | [string, Array]>} entries - Lines and subtrees.
+ * @param {number} depth - Current indentation level.
+ * @returns {string[]} Indented lines.
+ */
+function indentTree(entries, depth = 0) {
+  return entries.flatMap((entry) => {
+    const [line, children = []] = Array.isArray(entry) ? entry : [entry];
+    return [
+      `${INDENT.repeat(depth)}${line}`,
+      ...indentTree(children, depth + 1),
+    ];
+  });
+}
+
+function networkTree(network) {
+  return [
+    ...network.points.map(
+      (point) =>
+        `${pointName(point.id)}: point ${formatNumber(point.x)} ${formatNumber(point.y)}`
+    ),
+    ...network.links.map((link) => [
+      `${linkName(link.id)}: link ${pointName(link.source)} ${pointName(link.target)}`,
+      [`points ${pointList(link.points)}`],
+    ]),
+  ];
+}
+
+function strokeTree(stroke, index) {
+  const steps =
+    stroke.steps.length === 0
+      ? [pointName(stroke.start)]
+      : stroke.steps.map(stepLine);
+
+  return [
+    `stroke${index + 1}:`,
+    [`points ${pointList(stroke.points)}`, ['steps:', steps]],
+  ];
+}
+
+/**
+ * Export a vectorization result as indented Links Notation
+ * (https://github.com/link-foundation/links-notation), the structured form
+ * also used by lino-objects-codec.
  *
- * Every node and edge of the stroke graph becomes a named link, and every pen
- * stroke becomes a link that references the edges it walks, in order, with
- * the direction of travel and a `retrace` marker for U-turn segments:
+ * The stroke network is written as named links: every point is a link with
+ * its coordinates and every link between two points references them and
+ * carries its pixel chain. Every pen stroke lists the points it draws and the
+ * links it walks, in order, with the direction of travel and a `retrace`
+ * marker for U-turn segments:
  *
  * ```
- * (raster: size 28 28)
- * (pen: width 2.5)
- * (n1: node 9.5 4.5)
- * (e3: edge n1 n2)
- * (e3points: points (9.5 4.5) (12 9) (14.5 20.5))
- * (stroke1: stroke (e3 n1 n2) (e3 n2 n1 retrace))
+ * vectorization:
+ *   raster 28 28
+ *   pen 2.5
+ *   network:
+ *     p1: point 9.5 4.5
+ *     p2: point 14.5 20.5
+ *     l3: link p1 p2
+ *       points (9.5 4.5) (12 9) (14.5 20.5)
+ *   strokes:
+ *     stroke1:
+ *       points (9.5 4.5) (14.5 20.5) (9.5 4.5)
+ *       steps:
+ *         l3 p1 p2
+ *         l3 p2 p1 retrace
  * ```
+ *
+ * A stroke that is a single dot has the point itself as its only step.
  *
  * @param {{ width: number, height: number, strokeWidth: number,
- * graph: { nodes: object[], edges: object[] }, strokes: object[] }} result -
- * Output from vectorizeRasterLine.
+ * network: { points: object[], links: object[] }, strokes: object[] }}
+ * result - Output from vectorizeRasterLine.
  * @returns {string} Links Notation document.
  */
 export function toLinksNotation(result) {
-  const lines = [
-    `(raster: size ${result.width} ${result.height})`,
-    `(pen: width ${formatNumber(result.strokeWidth)})`,
+  const tree = [
+    [
+      'vectorization:',
+      [
+        `raster ${result.width} ${result.height}`,
+        `pen ${formatNumber(result.strokeWidth)}`,
+        ['network:', networkTree(result.network)],
+        ['strokes:', result.strokes.map(strokeTree)],
+      ],
+    ],
   ];
 
-  result.graph.nodes.forEach((node) => {
-    lines.push(
-      `(${nodeName(node.id)}: node ${formatNumber(node.x)} ${formatNumber(node.y)})`
-    );
-  });
-
-  result.graph.edges.forEach((edge) => {
-    const name = edgeName(edge.id);
-    lines.push(
-      `(${name}: edge ${nodeName(edge.source)} ${nodeName(edge.target)})`,
-      `(${name}points: points ${pointList(edge.points)})`
-    );
-  });
-
-  result.strokes.forEach((stroke, index) => {
-    const steps =
-      stroke.steps.length === 0
-        ? [`(${nodeName(stroke.start)})`]
-        : stroke.steps.map(
-            (step) =>
-              `(${edgeName(step.edge)} ${nodeName(step.from)} ${nodeName(
-                step.to
-              )}${step.retrace ? ' retrace' : ''})`
-          );
-    lines.push(`(stroke${index + 1}: stroke ${steps.join(' ')})`);
-  });
-
-  return `${lines.join('\n')}\n`;
+  return `${indentTree(tree).join('\n')}\n`;
 }

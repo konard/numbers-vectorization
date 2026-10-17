@@ -8,7 +8,7 @@ const radii = process.argv.slice(2).map(Number);
 
 for (const radius of radii.length > 0 ? radii : [6, 8, 10, 12, 14, 18]) {
   const result = vectorizeRasterLine(pressureLine(radius));
-  const { nodes, edges } = result.graph;
+  const { points: nodes, links: edges } = result.network;
   console.log(
     `wide ${radius}: ${nodes.length} n / ${edges.length} e,`,
     `${edges.filter((edge) => edge.completed).length} completed,`,

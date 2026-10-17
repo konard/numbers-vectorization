@@ -348,7 +348,7 @@ export function resultToJson(result) {
     strokeWidth: result.strokeWidth,
     path: result.path,
     strokes: result.strokes,
-    graph: result.graph,
+    network: result.network,
     coverage: result.coverage,
     simplification: result.simplification,
     svg: result.svg,

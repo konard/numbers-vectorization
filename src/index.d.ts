@@ -43,7 +43,7 @@ export interface VectorizationOptions {
    * so short dead ends and jitter at thick junctions stay one stroke.
    */
   penLiftCost?: number;
-  /** Receives the stroke graph after each pipeline stage (debugging). */
+  /** Receives the stroke network after each pipeline stage (debugging). */
   trace?: (stage: string, store: LinksStore) => void;
 }
 
@@ -59,11 +59,14 @@ export interface VectorPoint {
 }
 
 export interface StrokeStep {
-  edge: number;
+  /** Id of the network link the pen walks. */
+  link: number;
+  /** @deprecated Use `link`. */
+  readonly edge: number;
   from: number;
   to: number;
   reversed: boolean;
-  /** True when the pen walks over an already drawn edge (a U-turn). */
+  /** True when the pen walks over an already drawn link (a U-turn). */
   retrace: boolean;
 }
 
@@ -75,29 +78,46 @@ export interface Stroke {
   retraceLength: number;
 }
 
+export interface NetworkPoint {
+  id: number;
+  x: number;
+  y: number;
+  degree: number;
+  pixels: number[];
+}
+
+export interface NetworkLink {
+  id: number;
+  /** Point the link starts at. */
+  source: number;
+  /** Point the link ends at (the same point for a loop). */
+  target: number;
+  length: number;
+  points: VectorPoint[];
+  pixels: number[];
+  /** Added by coverage completion rather than traced from the skeleton. */
+  completed: boolean;
+  /**
+   * A narrow loop explaining ink wider than one pen line: the pen went out
+   * on one side and came back on the other (issue #7).
+   */
+  folded: boolean;
+}
+
+/**
+ * The stroke network: points (ends, junctions, loop anchors) and the links
+ * between them (skeleton branches). It is a links network, not a graph:
+ * points are self-referencing links and links reference points.
+ */
+export interface StrokeNetwork {
+  points: NetworkPoint[];
+  links: NetworkLink[];
+}
+
+/** @deprecated The stroke network was called a graph before issue 7. */
 export interface StrokeGraph {
-  nodes: {
-    id: number;
-    x: number;
-    y: number;
-    degree: number;
-    pixels: number[];
-  }[];
-  edges: {
-    id: number;
-    source: number;
-    target: number;
-    length: number;
-    points: VectorPoint[];
-    pixels: number[];
-    /** Added by coverage completion rather than traced from the skeleton. */
-    completed: boolean;
-    /**
-     * A narrow loop explaining ink wider than one pen line: the pen went out
-     * on one side and came back on the other (issue #7).
-     */
-    folded: boolean;
-  }[];
+  nodes: NetworkPoint[];
+  edges: NetworkLink[];
 }
 
 export interface Coverage {
@@ -132,17 +152,24 @@ export interface VectorizationResult {
   strokes: Stroke[];
   path: string;
   strokeWidth: number;
-  graph: StrokeGraph;
-  coverage: Coverage & { edges: { total: number; traversed: number } };
+  network: StrokeNetwork;
+  /** @deprecated Use `network`. */
+  readonly graph: StrokeGraph;
+  coverage: Coverage & {
+    /** How many network links the strokes walk. */
+    links: { total: number; traversed: number };
+    /** @deprecated Use `links`. */
+    readonly edges: { total: number; traversed: number };
+  };
   /** Simplification per separate shape (connected component). */
   simplification: {
     tolerance: number | 'auto';
     shapes: ShapeSimplification[];
   };
-  /** The stroke graph as doublet links. */
+  /** The stroke network as doublet links. */
   links: LinksStore;
   svg: string;
-  /** The stroke graph and strokes in Links Notation. */
+  /** The stroke network and strokes as indented Links Notation. */
   lino: string;
 }
 
@@ -167,10 +194,13 @@ export declare class LinksStore {
   /** Ids of links matching an optional source and/or target. */
   search(query?: { source?: number; target?: number }): number[];
   points(): number[];
+  /** Ids of links between points (not points themselves). */
+  links(): number[];
+  /** @deprecated Use `links()`. */
   edges(): number[];
   incident(point: number): number[];
   degree(point: number): number;
-  other(edge: number, point: number): number;
+  other(link: number, point: number): number;
 }
 
 /**
@@ -241,8 +271,8 @@ export declare function createSvgDocument(
 export declare const vectorizeRaster: typeof vectorizeRasterLine;
 
 /**
- * Plans one pen stroke per connected component of a stroke graph that walks
- * every edge, retracing as little as possible (Chinese postman + Fleury).
+ * Plans one pen stroke per connected component of a stroke network that walks
+ * every link, retracing as little as possible (Chinese postman + Fleury).
  */
 export declare function planStrokes(
   store: LinksStore,

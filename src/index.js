@@ -7,10 +7,10 @@ import { toLinksNotation } from './links-notation.js';
 import { LinksStore } from './links-store.js';
 import { fillSmallHoles, labelComponents, rasterToMask } from './raster.js';
 import {
-  buildStrokeGraph,
+  buildStrokeNetwork,
   estimateSkeletonStrokeWidth,
   skeletonNeighbors,
-} from './stroke-graph.js';
+} from './stroke-network.js';
 import { budgetPolylines, simplifyShapes } from './simplification.js';
 import { createSvgDocument, strokesToSvgPath } from './svg.js';
 import { thinRasterMask } from './thinning.js';
@@ -71,9 +71,23 @@ function estimateStrokeWidth(mask, length) {
   return Math.max(1, roundNumber(estimated));
 }
 
-function describeGraph(store) {
+/**
+ * Keep an old field name readable without serializing it twice: `alias`
+ * returns `target[name]` but is not enumerable, so JSON output only has the
+ * new name.
+ */
+function deprecatedAlias(target, alias, name) {
+  Object.defineProperty(target, alias, {
+    get: () => target[name],
+    enumerable: false,
+  });
+
+  return target;
+}
+
+function describeNetwork(store) {
   return {
-    nodes: store.points().map((id) => {
+    points: store.points().map((id) => {
       const { x, y, pixels } = store.getData(id);
       return {
         id,
@@ -83,7 +97,7 @@ function describeGraph(store) {
         pixels: [...pixels],
       };
     }),
-    edges: store.edges().map((id) => {
+    links: store.links().map((id) => {
       const { source, target } = store.get(id);
       const data = store.getData(id);
       return {
@@ -103,26 +117,28 @@ function describeGraph(store) {
 function describeStroke(store, stroke, points) {
   const retraceLength = stroke.steps
     .filter((step) => step.retrace)
-    .reduce((sum, step) => sum + store.getData(step.edge).length, 0);
+    .reduce((sum, step) => sum + store.getData(step.link).length, 0);
 
   return {
     start: stroke.start,
     points,
-    steps: stroke.steps,
+    steps: stroke.steps.map((step) =>
+      deprecatedAlias({ ...step }, 'edge', 'link')
+    ),
     length: roundNumber(polylineLength(points)),
     retraceLength: roundNumber(retraceLength),
   };
 }
 
-function edgeCoverage(store, strokes) {
+function linkCoverage(store, strokes) {
   const walked = new Set(
-    strokes.flatMap((stroke) => stroke.steps.map((step) => step.edge))
+    strokes.flatMap((stroke) => stroke.steps.map((step) => step.link))
   );
-  const edges = store.edges();
+  const links = store.links();
 
   return {
-    total: edges.length,
-    traversed: edges.filter((edge) => walked.has(edge)).length,
+    total: links.length,
+    traversed: links.filter((link) => walked.has(link)).length,
   };
 }
 
@@ -133,9 +149,10 @@ function edgeCoverage(store, strokes) {
  *
  * 1. threshold pixels into a mask and fill pinholes;
  * 2. thin the mask to a one-pixel skeleton (Zhang-Suen);
- * 3. convert the skeleton into a stroke graph of endpoints, junctions and
- *    branches stored as doublet links, then prune spurs, contract junction
- *    clusters and extend stroke ends back to the ink boundary;
+ * 3. convert the skeleton into a stroke network: points (ends, junctions)
+ *    and the doublet links between them (branches), then prune spurs,
+ *    contract junction clusters and extend stroke ends back to the ink
+ *    boundary;
  * 4. plan one pen stroke per connected component with route inspection
  *    (Chinese postman) and Fleury's algorithm, so that every branch, loop and
  *    dead end is drawn, retracing (U-turning over) as little as possible;
@@ -164,7 +181,7 @@ export function vectorizeRasterLine(raster, options = {}) {
   const skeleton = thinRasterMask(mask, width, height);
   const distances = distanceToBackground(mask, width, height);
   const penWidth = estimateSkeletonStrokeWidth(skeleton, distances);
-  const store = buildStrokeGraph({
+  const store = buildStrokeNetwork({
     skeleton,
     mask,
     width,
@@ -204,11 +221,11 @@ export function vectorizeRasterLine(raster, options = {}) {
     .map((stroke, index) => [stroke, simplification.points[index]])
     .filter(([, points]) => points !== null)
     .map(([stroke, points]) => describeStroke(store, stroke, points));
-  const graphLength = store
-    .edges()
-    .reduce((sum, edge) => sum + store.getData(edge).length, 0);
+  const networkLength = store
+    .links()
+    .reduce((sum, link) => sum + store.getData(link).length, 0);
   const strokeWidth =
-    options.strokeWidth ?? estimateStrokeWidth(rawMask, graphLength);
+    options.strokeWidth ?? estimateStrokeWidth(rawMask, networkLength);
   const strokePolylines = strokes.map((stroke) => stroke.points);
   const coverage = measureCoverage(
     { width, height, mask, skeleton, strokeWidth: penWidth },
@@ -223,11 +240,12 @@ export function vectorizeRasterLine(raster, options = {}) {
     strokes,
     path: strokesToSvgPath(strokePolylines, { curve: options.curve }),
     strokeWidth,
-    graph: describeGraph(store),
-    coverage: {
-      ...coverage,
-      edges: edgeCoverage(store, planned),
-    },
+    network: describeNetwork(store),
+    coverage: deprecatedAlias(
+      { ...coverage, links: linkCoverage(store, planned) },
+      'edges',
+      'links'
+    ),
     simplification: {
       tolerance: options.simplifyTolerance ?? 'auto',
       shapes: simplification.shapes,
@@ -237,6 +255,14 @@ export function vectorizeRasterLine(raster, options = {}) {
     lino: '',
   };
 
+  // The stroke network was called a graph before issue 7.
+  Object.defineProperty(result, 'graph', {
+    get: () => ({
+      nodes: result.network.points,
+      edges: result.network.links,
+    }),
+    enumerable: false,
+  });
   result.svg = createSvgDocument(result);
   result.lino = toLinksNotation(result);
 

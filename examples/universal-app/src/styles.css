@@ -394,7 +394,7 @@ h1 {
   max-width: 100%;
 }
 
-.graph-view,
+.network-view,
 .replay-view {
   display: grid;
   gap: 10px;
@@ -402,35 +402,35 @@ h1 {
   justify-items: center;
 }
 
-.graph-edge {
+.network-link {
   stroke: #255f85;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.graph-edge-retraced {
+.network-link-retraced {
   stroke: #b84d3e;
 }
 
-.graph-edge-completed {
+.network-link-completed {
   stroke: #2f8068;
 }
 
-.graph-node {
+.network-point {
   fill: #ffffff;
   stroke: #31404c;
   stroke-width: 0.3;
 }
 
-.graph-node-end {
+.network-point-end {
   fill: #255f85;
 }
 
-.graph-node-junction {
+.network-point-junction {
   fill: #b7791f;
 }
 
-.graph-legend {
+.network-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -443,13 +443,13 @@ h1 {
   list-style: none;
 }
 
-.graph-legend li {
+.network-legend li {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 
-.graph-legend span {
+.network-legend span {
   display: inline-block;
   width: 11px;
   height: 11px;

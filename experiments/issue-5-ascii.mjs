@@ -20,7 +20,7 @@ for (const argument of process.argv.slice(2)) {
       : stroke.points.slice(1).map((point, i) => [stroke.points[i], point])
   );
   const nodes = new Set(
-    result.graph.nodes.map(
+    result.network.points.map(
       (node) => Math.floor(node.y) * width + Math.floor(node.x)
     )
   );

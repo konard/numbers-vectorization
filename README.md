@@ -13,8 +13,9 @@ The vectorizer handles every path a digit can need:
 - junctions and crossings;
 - separate strokes and dots.
 
-It thresholds the image, thins it to a skeleton and builds a stroke graph in
-a doublet links store. It then plans a minimum-retrace pen route (Chinese
+It thresholds the image, thins it to a skeleton and builds a stroke network
+in a doublet links store: points (ends, junctions) and the links between them
+(skeleton branches). It then plans a minimum-retrace pen route (Chinese
 postman + Euler trail). All 50 bundled MNIST samples are fully drawn: every
 skeleton branch is covered. See the
 [issue #5 case study](docs/case-studies/issue-5/README.md) for the algorithm,
@@ -24,7 +25,7 @@ the research behind it and before/after measurements.
 
 ## Features
 
-- **Stroke graph vectorization**: Zhang–Suen thinning, an exact distance
+- **Stroke network vectorization**: Zhang–Suen thinning, an exact distance
   transform for the pen width, and spur pruning. Junction clusters are
   contracted and missed ink is completed along the medial axis.
 - **Loops and U-turns**: an optimal Chinese postman route with
@@ -40,10 +41,12 @@ the research behind it and before/after measurements.
   (`maxPoints`, down to one dot per shape) overrides it, and
   `result.simplification` reports the tolerance, points and match per shape.
 - **Outputs**: SVG path (`linear` polyline or `smooth` cubic Bézier),
-  standalone SVG, strokes with steps, the stroke graph, coverage metrics and
-  [Links Notation](https://github.com/link-foundation/links-notation)
-- **Associative model**: the stroke graph is a doublet links network
-  (`(id: source target)`), following the
+  standalone SVG, strokes with steps, the stroke network, coverage metrics and
+  indented [Links Notation](https://github.com/link-foundation/links-notation)
+  (the structured form also used by lino-objects-codec)
+- **Associative model**: the stroke network is a links network, not a graph:
+  a point is a self-referencing link `(id: id id)` and every branch is a
+  doublet link `(id: source target)` referencing its points, following the
   [associative technology stack](https://github.com/link-assistant/formal-ai/blob/main/docs/associative-tech-stack.md)
 - **Image input**: PNG (all color types and bit depths), PBM/PGM/PPM, JSON
   rasters and ASCII art. `foreground: 'auto'` detects ink polarity and an
@@ -51,7 +54,7 @@ the research behind it and before/after measurements.
 - **CLI, HTTP API and Docker image** with the API server preinstalled
 - **Web app** on GitHub Pages with the following inputs and panels:
   - inputs: 50 MNIST samples, a pencil canvas and image upload;
-  - panels: skeleton, stroke graph, an animated stroke-order replay, SVG and
+  - panels: skeleton, stroke network, an animated stroke-order replay, SVG and
     Links Notation.
 - **Multi-runtime support**: Works with Bun, Node.js, and Deno
 - **Universal testing**: Uses [test-anywhere](https://github.com/link-foundation/test-anywhere) for cross-runtime tests
@@ -83,9 +86,9 @@ const result = vectorizeRasterLine(raster, { curve: 'smooth' });
 console.log(result.path); // SVG path data, one "M" subpath per pen stroke
 console.log(result.svg); // standalone SVG document
 console.log(result.strokes); // pen strokes: points, steps, retraceLength
-console.log(result.graph); // stroke graph nodes and edges
-console.log(result.coverage); // skeleton / ink coverage, edges traversed
-console.log(result.lino); // stroke graph in Links Notation
+console.log(result.network); // stroke network: points and links
+console.log(result.coverage); // skeleton / ink coverage, links traversed
+console.log(result.lino); // stroke network and strokes in Links Notation
 ```
 
 Options: `threshold`, `alphaThreshold`, `foreground` (`dark` | `light` |
@@ -116,6 +119,44 @@ npx @link-foundation/example-package-name --help
 
 `--format` is `svg` (default), `json`, `path` or `lino`. Inputs can be PNG,
 PBM/PGM/PPM, a JSON raster or ASCII art (`#` = ink).
+
+`lino` is indented [Links Notation](https://github.com/link-foundation/links-notation),
+the structured form also used by
+[lino-objects-codec](https://github.com/link-foundation/lino-objects-codec).
+Each point and link of the stroke network is named. Each stroke lists the
+points it draws and the links it walks, in order (`retrace` marks a U-turn).
+This is `examples/images/mnist-4.png`:
+
+```
+vectorization:
+  raster 28 28
+  pen 2.24
+  network:
+    p1: point 23.179 4.821
+    p2: point 13.5 9.5
+    p3: point 13 15.5
+    p4: point 7.5 16.5
+    p6: point 12.038 22.886
+    l7: link p1 p3
+      points (23.179 4.821) (16.5 16.5) (13 15.5)
+    l8: link p2 p3
+      points (13.5 9.5) (11.5 12.5) (13 15.5)
+    l10: link p3 p4
+      points (13 15.5) (10.5 14.5) (7.5 16.5)
+    l11: link p3 p6
+      points (13 15.5) (12.038 22.886)
+  strokes:
+    stroke1:
+      points (13.5 9.5) (11.5 12.5) (13.5 17.5) (12.038 22.886)
+      steps:
+        l8 p2 p3
+        l11 p3 p6
+    stroke2:
+      points (7.5 16.5) (10.5 14.5) (16.5 16.5) (23.179 4.821)
+      steps:
+        l10 p4 p3
+        l7 p3 p1
+```
 
 ### HTTP API
 
@@ -157,8 +198,8 @@ The GitHub Pages app (`examples/universal-app`) has three input modes:
 - image upload, which is downscaled to 280 px and uses an automatic Otsu
   threshold.
 
-It shows the raster, skeleton, stroke graph (junctions, ends, retraced and
-completed edges), an animated stroke-order replay, the SVG and the Links
+It shows the raster, skeleton, stroke network (junctions, ends, retraced
+and completed links), an animated stroke-order replay, the SVG and the Links
 Notation export.
 
 ### Development Commands

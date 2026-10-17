@@ -35,7 +35,7 @@ describe('crossing lines are separate pen strokes (issue 7)', () => {
 
       expect(result.strokes.length).toBe(MULTI_STROKE_SHAPES[name].length);
       expect(retrace(result)).toBe(0);
-      expect(result.coverage.edges.traversed).toBe(result.coverage.edges.total);
+      expect(result.coverage.links.traversed).toBe(result.coverage.links.total);
       expect(result.coverage.mask >= 0.97).toBe(true);
     });
   }
@@ -53,8 +53,8 @@ describe('crossing lines are separate pen strokes (issue 7)', () => {
   it('keeps the crossing node in the stroke network', () => {
     const result = vectorizeRasterLine(multiStrokeRaster('plus'));
 
-    expect(result.graph.nodes.some((node) => node.degree === 4)).toBe(true);
-    expect(result.graph.edges.length).toBe(4);
+    expect(result.network.points.some((node) => node.degree === 4)).toBe(true);
+    expect(result.network.links.length).toBe(4);
   });
 
   it('keeps shapes drawn in one movement as one stroke', () => {

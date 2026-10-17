@@ -98,10 +98,10 @@ class MinHeap {
   }
 }
 
-function graphSegments(store, skip) {
+function networkSegments(store, skip) {
   const segments = [];
 
-  store.edges().forEach((edge) => {
+  store.links().forEach((edge) => {
     if (edge !== skip) {
       segments.push(...polylineSegments([store.getData(edge).points]));
     }
@@ -120,7 +120,7 @@ function graphSegments(store, skip) {
   return segments;
 }
 
-function uncoveredMask(store, input, reach, segments = graphSegments(store)) {
+function uncoveredMask(store, input, reach, segments = networkSegments(store)) {
   const { mask, width, height } = input;
   const grid = segmentGrid(segments, width, height, reach);
   const uncovered = new Uint8Array(mask.length);
@@ -137,10 +137,10 @@ function uncoveredMask(store, input, reach, segments = graphSegments(store)) {
   return uncovered;
 }
 
-function graphAnchors(store, width) {
+function networkAnchors(store, width) {
   const anchors = new Map();
 
-  store.edges().forEach((edge) => {
+  store.links().forEach((edge) => {
     const { points } = store.getData(edge);
 
     points.forEach((point, index) => {
@@ -162,7 +162,7 @@ function graphAnchors(store, width) {
 }
 
 /**
- * Multi-source Dijkstra through the ink from every pixel the stroke graph
+ * Multi-source Dijkstra through the ink from every pixel the stroke network
  * already passes through. Stepping costs `length / distanceToBackground`, so
  * the cheapest routes hug the medial axis of the ink like a skeleton branch.
  */
@@ -350,7 +350,7 @@ function cornerPoints(points, index, tip, input, longest) {
 
 function countUncovered(store, input, skip, polylines) {
   const segments = [
-    ...graphSegments(store, skip),
+    ...networkSegments(store, skip),
     ...polylineSegments(polylines),
   ];
   const reach = input.strokeWidth / 2 + Math.SQRT1_2;
@@ -506,7 +506,7 @@ function pickBranch(components, deep, geodesics, width, halfWidth) {
  * middle arm of a "3", a blunt hook), so some ink is never reached by any
  * skeleton branch. Repeatedly find the largest blob of ink that the pen
  * misses by a clear margin and grow a medial branch into it from the nearest
- * point of the stroke graph. The new branch is a dead end, so the traversal
+ * point of the stroke network. The new branch is a dead end, so the traversal
  * draws it with a U-turn.
  */
 export function completeCoverage(store, input) {
@@ -519,7 +519,7 @@ export function completeCoverage(store, input) {
     const uncovered = uncoveredMask(store, input, reach);
     const deep = uncoveredMask(store, input, depth);
     const { components } = labelComponents(uncovered, width, height);
-    const anchors = graphAnchors(store, width);
+    const anchors = networkAnchors(store, width);
     const geodesics = medialGeodesics(input, anchors);
     const pixels = pickBranch(components, deep, geodesics, width, halfWidth);
 

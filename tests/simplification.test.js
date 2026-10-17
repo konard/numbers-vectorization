@@ -68,7 +68,7 @@ describe('each shape is explained with the fewest points (issue 7)', () => {
 
       expect(pointCount(auto) < pointCount(fixed)).toBe(true);
       expect(auto.simplification.shapes[0].match > 0.85).toBe(true);
-      expect(auto.coverage.edges.traversed).toBe(auto.coverage.edges.total);
+      expect(auto.coverage.links.traversed).toBe(auto.coverage.links.total);
     });
   }
 

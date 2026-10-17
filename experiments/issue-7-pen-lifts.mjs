@@ -13,7 +13,7 @@ for (const name of names.length > 0
   ? names
   : Object.keys(MULTI_STROKE_SHAPES)) {
   const result = vectorizeRasterLine(multiStrokeRaster(name));
-  const degrees = result.graph.nodes.map((node) => node.degree).join(',');
+  const degrees = result.network.points.map((node) => node.degree).join(',');
   const strokes = result.strokes
     .map((stroke) => {
       const [first, last] = [stroke.points[0], stroke.points.at(-1)];
@@ -22,7 +22,7 @@ for (const name of names.length > 0
     .join('; ');
 
   console.log(
-    `${name}: ${result.graph.nodes.length} nodes [${degrees}], ` +
-      `${result.graph.edges.length} links, mask ${result.coverage.mask}: ${strokes}`
+    `${name}: ${result.network.points.length} nodes [${degrees}], ` +
+      `${result.network.links.length} links, mask ${result.coverage.mask}: ${strokes}`
   );
 }

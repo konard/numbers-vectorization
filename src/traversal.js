@@ -21,7 +21,7 @@ export function connectedComponents(store) {
     return root;
   };
 
-  for (const edge of store.edges()) {
+  for (const edge of store.links()) {
     const { source, target } = store.get(edge);
     parent.set(find(source), find(target));
   }
@@ -41,7 +41,7 @@ export function connectedComponents(store) {
   }));
 }
 
-/** Single-source shortest paths (Dijkstra) over the stroke graph. */
+/** Single-source shortest paths (Dijkstra) over the stroke network. */
 function shortestPaths(store, nodes, source) {
   const distance = new Map(nodes.map((node) => [node, Infinity]));
   const via = new Map();
@@ -153,7 +153,7 @@ function exactPairing(costs) {
   return solve((1 << count) - 1, true);
 }
 
-/** Greedy closest-pair matching for graphs with very many odd nodes. */
+/** Greedy closest-pair matching for networks with very many odd points. */
 function greedyPairing(costs) {
   const candidates = [];
 
@@ -296,7 +296,7 @@ function orientations(store, copy, from) {
 }
 
 function stepPoints(store, step) {
-  const { points } = store.getData(step.edge);
+  const { points } = store.getData(step.link);
 
   return step.reversed ? [...points].reverse() : points;
 }
@@ -311,7 +311,7 @@ function candidateSteps(store, copies, current) {
   return (safe.length > 0 ? safe : available).flatMap((copy) =>
     orientations(store, copy, current).map((reversed) => ({
       copy,
-      edge: copy.edge,
+      link: copy.edge,
       from: current,
       to: store.other(copy.edge, current),
       reversed,
@@ -356,10 +356,10 @@ function eulerTrail(store, copies, start, lookAhead) {
     }
 
     best.copy.used = true;
-    const count = usage.get(best.edge) ?? 0;
-    usage.set(best.edge, count + 1);
+    const count = usage.get(best.link) ?? 0;
+    usage.set(best.link, count + 1);
     steps.push({
-      edge: best.edge,
+      link: best.link,
       from: best.from,
       to: best.to,
       reversed: best.reversed,
@@ -383,7 +383,7 @@ function penLiftNetwork(store, component, reach) {
   const view = new LinksStore();
   const real = new Map();
   const put = (id, source, target) => {
-    view.links.set(id, { id, source, target });
+    view.records.set(id, { id, source, target });
     view.index(id, source, target);
     view.data.set(id, store.getData(id));
   };
@@ -525,7 +525,7 @@ export function planStrokes(store, options = {}) {
 /**
  * Concatenate the per-edge polylines of a planned stroke.
  *
- * @param {import('./links-store.js').LinksStore} store - Stroke graph.
+ * @param {import('./links-store.js').LinksStore} store - Stroke network.
  * @param {{ start: number, steps: object[] }} stroke - Planned stroke.
  * @param {string} [key] - Edge data key holding the polyline.
  * @returns {{ x: number, y: number }[]} Stroke points.
@@ -538,8 +538,8 @@ export function strokePoints(store, stroke, key = 'points') {
   const points = [];
 
   stroke.steps.forEach((step) => {
-    const edgePoints = store.getData(step.edge)[key];
-    const oriented = step.reversed ? [...edgePoints].reverse() : edgePoints;
+    const linkPoints = store.getData(step.link)[key];
+    const oriented = step.reversed ? [...linkPoints].reverse() : linkPoints;
     points.push(...(points.length === 0 ? oriented : oriented.slice(1)));
   });
 

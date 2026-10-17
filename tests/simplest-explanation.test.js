@@ -4,7 +4,7 @@ import { vectorizeRasterLine } from '../src/index.js';
 import { fourRaster, pressureLine } from './helpers/issue-7-shapes.js';
 
 function completedEdges(result) {
-  return result.graph.edges.filter((edge) => edge.completed).length;
+  return result.network.links.filter((edge) => edge.completed).length;
 }
 
 function retrace(result) {
@@ -20,8 +20,8 @@ describe('a narrow loop is a loop, not zig-zags (issue 7)', () => {
     it(`explains the "4" with a ${gap} px loop as 3 nodes and 3 links`, () => {
       const result = vectorizeRasterLine(fourRaster(gap));
 
-      expect(result.graph.nodes.length).toBe(3);
-      expect(result.graph.edges.length).toBe(3);
+      expect(result.network.points.length).toBe(3);
+      expect(result.network.links.length).toBe(3);
       expect(result.strokes.length).toBe(1);
       expect(retrace(result)).toBe(0);
       expect(completedEdges(result)).toBe(0);
@@ -32,7 +32,9 @@ describe('a narrow loop is a loop, not zig-zags (issue 7)', () => {
 
   it('marks the fused loop as folded and keeps open loops traced', () => {
     const folded = (gap) =>
-      vectorizeRasterLine(fourRaster(gap)).graph.edges.filter((e) => e.folded);
+      vectorizeRasterLine(fourRaster(gap)).network.links.filter(
+        (e) => e.folded
+      );
 
     expect(folded(60).length).toBe(0);
     expect(folded(10).length).toBe(1);
@@ -44,8 +46,8 @@ describe('a narrow loop is a loop, not zig-zags (issue 7)', () => {
     // explains it without drawing the vertical line twice.
     const result = vectorizeRasterLine(fourRaster(0));
 
-    expect(result.graph.nodes.length).toBe(4);
-    expect(result.graph.edges.length).toBe(3);
+    expect(result.network.points.length).toBe(4);
+    expect(result.network.links.length).toBe(3);
     expect(result.strokes.length).toBe(2);
     expect(retrace(result)).toBe(0);
     expect(completedEdges(result)).toBe(0);
@@ -65,8 +67,8 @@ describe('wider ink is not a fishbone of stubs (issue 7)', () => {
     it(`keeps a line pressed to radius ${radius} in the middle one link`, () => {
       const result = vectorizeRasterLine(pressureLine(radius));
 
-      expect(result.graph.nodes.length).toBe(2);
-      expect(result.graph.edges.length).toBe(1);
+      expect(result.network.points.length).toBe(2);
+      expect(result.network.links.length).toBe(1);
       expect(completedEdges(result)).toBe(0);
       expect(retrace(result)).toBe(0);
     });

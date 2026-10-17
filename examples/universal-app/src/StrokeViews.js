@@ -25,28 +25,28 @@ function SvgFrame({ result, label, children }) {
   );
 }
 
-function nodeClass(degree) {
+function pointClass(degree) {
   if (degree === 1) {
-    return 'graph-node graph-node-end';
+    return 'network-point network-point-end';
   }
 
-  return degree >= 3 ? 'graph-node graph-node-junction' : 'graph-node';
+  return degree >= 3 ? 'network-point network-point-junction' : 'network-point';
 }
 
-function edgeClass(edge, retraced) {
-  if (edge.completed) {
-    return 'graph-edge graph-edge-completed';
+function linkClass(link, retraced) {
+  if (link.completed) {
+    return 'network-link network-link-completed';
   }
 
-  return retraced.has(edge.id)
-    ? 'graph-edge graph-edge-retraced'
-    : 'graph-edge';
+  return retraced.has(link.id)
+    ? 'network-link network-link-retraced'
+    : 'network-link';
 }
 
-function GraphLegend() {
+function NetworkLegend() {
   return h(
     'ul',
-    { className: 'graph-legend' },
+    { className: 'network-legend' },
     [
       ['legend-end', 'End'],
       ['legend-junction', 'Junction'],
@@ -60,34 +60,36 @@ function GraphLegend() {
 }
 
 /**
- * The stroke graph stored as doublet links: branches (edges) between
- * endpoints and junctions (nodes). Dashed edges are walked twice (a U-turn or
- * a detour), green edges were added by coverage completion.
+ * The stroke network stored as doublet links: branches (links) between
+ * ends and junctions (points). Dashed links are walked twice (a U-turn or a
+ * detour), green links were added by coverage completion.
  */
-export function StrokeGraphView({ result }) {
+export function StrokeNetworkView({ result }) {
   const unit = markerUnit(result);
   const retraced = new Set(
     result.strokes.flatMap((stroke) =>
-      stroke.steps.filter((step) => step.retrace).map((step) => step.edge)
+      stroke.steps.filter((step) => step.retrace).map((step) => step.link)
     )
   );
-  const nodes = new Map(result.graph.nodes.map((node) => [node.id, node]));
+  const points = new Map(
+    result.network.points.map((point) => [point.id, point])
+  );
 
   return h(
     'div',
-    { className: 'graph-view' },
+    { className: 'network-view' },
     h(
       SvgFrame,
-      { result, label: 'Stroke graph' },
+      { result, label: 'Stroke network' },
       h(
         'g',
         { fill: 'none', strokeWidth: unit * 0.45 },
-        result.graph.edges.map((edge) =>
+        result.network.links.map((link) =>
           h('path', {
-            key: edge.id,
-            d: strokesToSvgPath([edge.points]),
-            className: edgeClass(edge, retraced),
-            strokeDasharray: retraced.has(edge.id)
+            key: link.id,
+            d: strokesToSvgPath([link.points]),
+            className: linkClass(link, retraced),
+            strokeDasharray: retraced.has(link.id)
               ? `${unit * 1.4} ${unit}`
               : undefined,
           })
@@ -96,21 +98,21 @@ export function StrokeGraphView({ result }) {
       h(
         'g',
         null,
-        result.graph.nodes.map((node) =>
+        result.network.points.map((point) =>
           h('circle', {
-            key: node.id,
-            cx: node.x,
-            cy: node.y,
+            key: point.id,
+            cx: point.x,
+            cy: point.y,
             r: unit * 0.7,
-            className: nodeClass(node.degree),
+            className: pointClass(point.degree),
           })
         )
       ),
       h(
         'g',
-        { className: 'graph-starts', strokeWidth: unit * 0.3 },
+        { className: 'network-starts', strokeWidth: unit * 0.3 },
         result.strokes.map((stroke, index) => {
-          const start = nodes.get(stroke.start) ?? stroke.points[0];
+          const start = points.get(stroke.start) ?? stroke.points[0];
 
           return start
             ? h('circle', {
@@ -125,7 +127,7 @@ export function StrokeGraphView({ result }) {
         })
       )
     ),
-    h(GraphLegend)
+    h(NetworkLegend)
   );
 }
 

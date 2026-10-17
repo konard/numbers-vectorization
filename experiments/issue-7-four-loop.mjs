@@ -23,7 +23,7 @@ for (const gap of gaps.length > 0 ? gaps : [30, 20, 14, 10, 6, 3, 0]) {
   });
   const retrace = result.strokes.reduce((sum, s) => sum + s.retraceLength, 0);
   console.log(
-    `gap ${gap}: ${result.graph.nodes.length} n / ${result.graph.edges.length} e,`,
+    `gap ${gap}: ${result.network.points.length} n / ${result.network.links.length} e,`,
     `${result.strokes.length} strokes, ${result.points.length} pts,`,
     `retrace ${retrace.toFixed(1)}, mask ${result.coverage.mask.toFixed(3)}`
   );

@@ -26,7 +26,7 @@ for (const { index, label, raster } of loadBundledMnistSamples()) {
 
   const result = vectorizeRasterLine(raster, options);
   const points = result.strokes.reduce((sum, s) => sum + s.points.length, 0);
-  const { nodes, edges } = result.graph;
+  const { points: nodes, links: edges } = result.network;
 
   console.log(
     index,
