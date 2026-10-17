@@ -1,6 +1,6 @@
 {
   "name": "@link-foundation/example-package-name",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "CPU-only raster line vectorization for handwritten digit strokes",
   "type": "module",
   "main": "src/index.js",
