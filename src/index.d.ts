@@ -138,6 +138,27 @@ export interface Thresholding {
   auto: boolean;
 }
 
+/** Every option as used for one raster (see `VectorizationResult`). */
+export interface UsedSettings {
+  foreground: 'dark' | 'light';
+  threshold: number;
+  alphaThreshold: number;
+  fillHoles: number;
+  simplifyTolerance: number | 'auto';
+  pointCost: number;
+  /** Point budget per shape; `null` for none. */
+  maxPoints: number | null;
+  penLifts: boolean;
+  penLiftCost: number;
+  lookAhead: number;
+  strokeWidth: number;
+  curve: 'linear' | 'smooth';
+  /** Options chosen automatically for this raster rather than set. */
+  automatic: Array<
+    'foreground' | 'threshold' | 'simplifyTolerance' | 'strokeWidth'
+  >;
+}
+
 export interface ShapeSimplification {
   /** Indices into `strokes` before a point budget dropped any. */
   strokes: number[];
@@ -174,6 +195,8 @@ export interface VectorizationResult {
     tolerance: number | 'auto';
     shapes: ShapeSimplification[];
   };
+  /** Every option as used, defaults and automatic choices filled in. */
+  settings: UsedSettings;
   /** The stroke network as doublet links. */
   links: LinksStore;
   svg: string;

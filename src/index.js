@@ -19,6 +19,7 @@ export {
 } from './pen-recording.js';
 import { LinksStore } from './links-store.js';
 import {
+  DEFAULT_ALPHA_THRESHOLD,
   fillSmallHoles,
   labelComponents,
   rasterToMask,
@@ -29,12 +30,17 @@ import {
   estimateSkeletonStrokeWidth,
   skeletonNeighbors,
 } from './stroke-network.js';
-import { budgetPolylines, simplifyShapes } from './simplification.js';
+import {
+  budgetPolylines,
+  DEFAULT_POINT_COST,
+  simplifyShapes,
+} from './simplification.js';
 import { createSvgDocument, strokesToSvgPath } from './svg.js';
 import { thinRasterMask } from './thinning.js';
 import { planStrokes, strokePoints } from './traversal.js';
 
 const DEFAULT_HOLE_AREA = 2;
+const DEFAULT_LOOK_AHEAD = 3;
 
 /**
  * Example function retained for compatibility with earlier template examples.
@@ -162,6 +168,36 @@ function linkCoverage(store, strokes) {
 }
 
 /**
+ * Every option as it was used, with defaults and automatic choices filled
+ * in; `automatic` lists the options that were chosen for this raster rather
+ * than set (issue 7: every setting is manual, or matched to the task).
+ */
+function usedSettings(options, thresholding, strokeWidth) {
+  const automatic = [
+    ['foreground', options.foreground === 'auto'],
+    ['threshold', thresholding.auto],
+    ['simplifyTolerance', (options.simplifyTolerance ?? 'auto') === 'auto'],
+    ['strokeWidth', options.strokeWidth === undefined],
+  ];
+
+  return {
+    foreground: thresholding.foreground,
+    threshold: thresholding.threshold,
+    alphaThreshold: options.alphaThreshold ?? DEFAULT_ALPHA_THRESHOLD,
+    fillHoles: options.fillHoles ?? DEFAULT_HOLE_AREA,
+    simplifyTolerance: options.simplifyTolerance ?? 'auto',
+    pointCost: options.pointCost ?? DEFAULT_POINT_COST,
+    maxPoints: options.maxPoints ?? null,
+    penLifts: options.penLifts !== false,
+    penLiftCost: options.penLiftCost ?? DEFAULT_PEN_LIFT_COST,
+    lookAhead: options.lookAhead ?? DEFAULT_LOOK_AHEAD,
+    strokeWidth,
+    curve: options.curve ?? 'linear',
+    automatic: automatic.filter(([, auto]) => auto).map(([name]) => name),
+  };
+}
+
+/**
  * Vectorize a raster of handwriting into SVG pen strokes.
  *
  * The pipeline is CPU-only and deterministic:
@@ -218,7 +254,7 @@ export function vectorizeRasterLine(raster, options = {}) {
   });
   options.trace?.('completed', store);
   const planned = planStrokes(store, {
-    lookAhead: options.lookAhead,
+    lookAhead: options.lookAhead ?? DEFAULT_LOOK_AHEAD,
     reach: continuationReach(penWidth),
     liftCost:
       options.penLifts === false
@@ -250,6 +286,7 @@ export function vectorizeRasterLine(raster, options = {}) {
     { width, height, mask, skeleton, strokeWidth: penWidth },
     planned.map((stroke) => strokePoints(store, stroke))
   );
+  const thresholding = resolveThreshold(raster, options);
   const result = {
     width,
     height,
@@ -265,11 +302,12 @@ export function vectorizeRasterLine(raster, options = {}) {
       'edges',
       'links'
     ),
-    thresholding: resolveThreshold(raster, options),
+    thresholding,
     simplification: {
       tolerance: options.simplifyTolerance ?? 'auto',
       shapes: simplification.shapes,
     },
+    settings: usedSettings(options, thresholding, strokeWidth),
     links: store,
     svg: '',
     lino: '',

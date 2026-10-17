@@ -1,6 +1,6 @@
 const DEFAULT_THRESHOLD = 32;
 const DEFAULT_RGBA_THRESHOLD = 224;
-const DEFAULT_ALPHA_THRESHOLD = 64;
+export const DEFAULT_ALPHA_THRESHOLD = 64;
 
 export function assertRasterShape(raster) {
   if (!raster || !Number.isInteger(raster.width) || raster.width <= 0) {

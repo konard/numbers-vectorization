@@ -54,3 +54,56 @@ describe('the threshold actually used is reported (issue 7)', () => {
     ).toBe(true);
   });
 });
+
+describe('every setting is reported as it was used (issue 7)', () => {
+  const LINE = {
+    width: 9,
+    height: 5,
+    pixels: Array.from({ length: 45 }, (_, i) =>
+      Math.floor(i / 9) === 2 && i % 9 > 0 && i % 9 < 8 ? 255 : 0
+    ),
+  };
+
+  it('fills in the defaults and lists what was chosen automatically', () => {
+    const { settings, strokeWidth } = vectorizeRasterLine(LINE);
+
+    expect(settings).toEqual({
+      foreground: 'light',
+      threshold: 32,
+      alphaThreshold: 64,
+      fillHoles: 2,
+      simplifyTolerance: 'auto',
+      pointCost: 1,
+      maxPoints: null,
+      penLifts: true,
+      penLiftCost: 2.5,
+      lookAhead: 3,
+      strokeWidth,
+      curve: 'linear',
+      automatic: ['simplifyTolerance', 'strokeWidth'],
+    });
+  });
+
+  it('keeps manual settings as they were set', () => {
+    const manual = {
+      foreground: 'light',
+      threshold: 100,
+      alphaThreshold: 10,
+      fillHoles: 0,
+      simplifyTolerance: 1.5,
+      pointCost: 4,
+      maxPoints: 1,
+      penLifts: false,
+      penLiftCost: 7,
+      lookAhead: 5,
+      strokeWidth: 3,
+      curve: 'smooth',
+    };
+    const { settings } = vectorizeRasterLine(LINE, manual);
+
+    expect(settings).toEqual({ ...manual, automatic: [] });
+    expect(
+      vectorizeRasterLine(LINE, { foreground: 'auto' }).settings.automatic
+    ).toEqual(['foreground', 'threshold', 'simplifyTolerance', 'strokeWidth']);
+  });
+});

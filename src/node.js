@@ -386,6 +386,7 @@ export function resultToJson(result) {
     coverage: result.coverage,
     thresholding: result.thresholding,
     simplification: result.simplification,
+    settings: result.settings,
     svg: result.svg,
     lino: result.lino,
   };
