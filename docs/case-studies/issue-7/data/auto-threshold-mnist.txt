@@ -1,0 +1,2 @@
+threshold 32 {"mask":0.981725678899182,"skeleton":1.0000000000000004,"strokes":58,"points":325,"thresholds":[32,32]}
+auto (Otsu) {"mask":0.9846838230224465,"skeleton":1.0000000000000004,"strokes":58,"points":345,"thresholds":[65,118]}

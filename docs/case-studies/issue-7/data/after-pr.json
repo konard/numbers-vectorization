@@ -1,0 +1,111 @@
+{
+  "vectorizer": "issue-7-a769d3e32f92 src/index.js",
+  "fourLoop": {
+    "gap 30": {
+      "points": 3,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 15,
+      "retrace": 0,
+      "ink": 0.996
+    },
+    "gap 14": {
+      "points": 3,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 10,
+      "retrace": 0,
+      "ink": 0.998
+    },
+    "gap 6": {
+      "points": 3,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 9,
+      "retrace": 0,
+      "ink": 0.998
+    },
+    "gap 3": {
+      "points": 3,
+      "links": 3,
+      "strokes": 1,
+      "svgPoints": 10,
+      "retrace": 0,
+      "ink": 0.998
+    },
+    "gap 0": {
+      "points": 4,
+      "links": 3,
+      "strokes": 2,
+      "svgPoints": 9,
+      "retrace": 0,
+      "ink": 0.997
+    }
+  },
+  "multiStroke": {
+    "plus": {
+      "points": 5,
+      "links": 4,
+      "strokes": 2,
+      "svgPoints": 4,
+      "retrace": 0,
+      "ink": 1
+    },
+    "cross": {
+      "points": 5,
+      "links": 4,
+      "strokes": 2,
+      "svgPoints": 4,
+      "retrace": 0,
+      "ink": 1
+    },
+    "tee": {
+      "points": 4,
+      "links": 3,
+      "strokes": 2,
+      "svgPoints": 4,
+      "retrace": 0,
+      "ink": 1
+    },
+    "seven": {
+      "points": 5,
+      "links": 4,
+      "strokes": 2,
+      "svgPoints": 7,
+      "retrace": 0,
+      "ink": 0.998
+    },
+    "letterA": {
+      "points": 4,
+      "links": 4,
+      "strokes": 2,
+      "svgPoints": 6,
+      "retrace": 0,
+      "ink": 0.997
+    },
+    "openFour": {
+      "points": 5,
+      "links": 4,
+      "strokes": 2,
+      "svgPoints": 5,
+      "retrace": 0,
+      "ink": 1
+    }
+  },
+  "sevenBarredRecording": {
+    "points": 5,
+    "links": 4,
+    "strokes": 2,
+    "svgPoints": 5,
+    "retrace": 0,
+    "ink": 0.979
+  },
+  "mnist50": {
+    "strokes": 58,
+    "networkLinks": 123,
+    "svgPoints": 325,
+    "retrace": 63.2,
+    "meanInk": 0.982,
+    "minInk": 0.923
+  }
+}

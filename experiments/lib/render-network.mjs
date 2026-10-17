@@ -74,11 +74,15 @@ export function renderNetwork(result, { scale = 2, strokes = false } = {}) {
       drawDot(paint, scaled(stroke.points[0]), color, dot + 1);
     });
   } else {
-    const network = result.network;
-    network.edges.forEach((edge) =>
-      drawPolyline(paint, edge.points.map(scaled), [210, 40, 40])
+    // Results from before issue 7 call the stroke network a graph.
+    const network = result.network ?? {
+      points: result.graph.nodes,
+      links: result.graph.edges,
+    };
+    network.links.forEach((link) =>
+      drawPolyline(paint, link.points.map(scaled), [210, 40, 40])
     );
-    network.nodes.forEach((node) =>
+    network.points.forEach((node) =>
       drawDot(paint, scaled(node), [20, 150, 60], dot)
     );
   }
