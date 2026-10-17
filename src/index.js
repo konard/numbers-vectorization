@@ -1,4 +1,5 @@
 import { completeCoverage } from './completion.js';
+import { continuationReach, DEFAULT_PEN_LIFT_COST } from './continuation.js';
 import { measureCoverage } from './coverage.js';
 import { distanceToBackground } from './distance.js';
 import {
@@ -150,7 +151,8 @@ function edgeCoverage(store, strokes) {
  * @param {{ threshold?: number, alphaThreshold?: number,
  * foreground?: 'dark' | 'light', simplifyTolerance?: number,
  * strokeWidth?: number, fillHoles?: number, curve?: 'linear' | 'smooth',
- * lookAhead?: number }} [options] - Vectorization options.
+ * lookAhead?: number, penLifts?: boolean, penLiftCost?: number }} [options] -
+ * Vectorization options.
  * @returns {import('./index.d.ts').VectorizationResult} Vectorization result.
  */
 export function vectorizeRasterLine(raster, options = {}) {
@@ -192,7 +194,14 @@ export function vectorizeRasterLine(raster, options = {}) {
     });
   });
 
-  const planned = planStrokes(store, { lookAhead: options.lookAhead });
+  const planned = planStrokes(store, {
+    lookAhead: options.lookAhead,
+    reach: continuationReach(penWidth),
+    liftCost:
+      options.penLifts === false
+        ? Infinity
+        : penWidth * (options.penLiftCost ?? DEFAULT_PEN_LIFT_COST),
+  });
   const strokes = planned.map((stroke) => describeStroke(store, stroke));
   const graphLength = store
     .edges()

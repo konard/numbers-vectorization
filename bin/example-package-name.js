@@ -32,6 +32,8 @@ function usage() {
     '  --fill-holes <n>             Fill enclosed holes up to n pixels',
     '  --curve linear|smooth        Polyline or smooth cubic Bézier output',
     '  --look-ahead <n>             Tangent look-ahead for path continuation',
+    '  --pen-lifts true|false       Lift the pen where lines cross (default: true)',
+    '  --pen-lift-cost <n>          Pen widths of retracing a lift saves (2.5)',
     '',
     'Serve options:',
     '  --port <n>  Port to listen on (default: 3000, env PORT)',

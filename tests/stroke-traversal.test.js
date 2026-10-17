@@ -56,7 +56,7 @@ describe('stroke graph traversal (issue 5)', () => {
   });
 
   it('crosses straight through a + junction and retraces the minimum', () => {
-    const result = vectorizeShape('plus');
+    const result = vectorizeShape('plus', { penLifts: false });
     const [stroke] = result.strokes;
 
     expectFullyDrawn(result);
@@ -67,7 +67,7 @@ describe('stroke graph traversal (issue 5)', () => {
   });
 
   it('makes a U-turn to draw the dead-end branch of a T junction', () => {
-    const result = vectorizeShape('tee');
+    const result = vectorizeShape('tee', { penLifts: false });
     const [stroke] = result.strokes;
     const retraced = stroke.steps.filter((step) => step.retrace);
 
@@ -76,6 +76,16 @@ describe('stroke graph traversal (issue 5)', () => {
     expect(retraced.length).toBe(1);
     expect(stroke.retraceLength).toBe(4);
     expect(result.lino.includes(' retrace)')).toBe(true);
+  });
+
+  it('lifts the pen instead where the lines cross straight (issue 7)', () => {
+    for (const name of ['plus', 'tee']) {
+      const result = vectorizeShape(name);
+
+      expectFullyDrawn(result);
+      expect(result.strokes.length).toBe(2);
+      expect(result.strokes.every((s) => s.retraceLength === 0)).toBe(true);
+    }
   });
 
   it('emits one subpath per connected component', () => {

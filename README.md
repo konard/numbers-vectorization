@@ -28,8 +28,11 @@ the research behind it and before/after measurements.
   transform for the pen width, and spur pruning. Junction clusters are
   contracted and missed ink is completed along the medial axis.
 - **Loops and U-turns**: an optimal Chinese postman route with
-  minimum-turn Euler trails. Retraced segments are marked `retrace: true`,
-  and every connected component becomes one pen stroke.
+  minimum-turn Euler trails. Retraced segments are marked `retrace: true`.
+  A connected component is one pen stroke unless lifting the pen where its
+  lines cross or meet straight (the two strokes of a `+`, `x` or `T`, the bar
+  of a `7`) saves more than 2.5 pen widths of retracing per lift
+  (`penLifts`, `penLiftCost`).
 - **Outputs**: SVG path (`linear` polyline or `smooth` cubic Bézier),
   standalone SVG, strokes with steps, the stroke graph, coverage metrics and
   [Links Notation](https://github.com/link-foundation/links-notation)
@@ -122,7 +125,7 @@ curl -H 'content-type: application/json' \
 `POST /vectorize` accepts an image body or JSON
 `{ width, height, pixels, options }`. Query parameters: `format`, `threshold`,
 `foreground`, `simplify`, `stroke-width`, `fill-holes`, `curve`,
-`look-ahead`.
+`look-ahead`, `pen-lifts`, `pen-lift-cost`.
 
 ### Docker
 

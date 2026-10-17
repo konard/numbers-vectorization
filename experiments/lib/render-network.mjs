@@ -1,6 +1,16 @@
 // Renders a vectorization result as an RGB PNG for debugging: ink mask in
-// light gray, skeleton in blue, network edges in red and nodes in green.
+// light gray, skeleton in blue, network links in red and nodes in green. With
+// `strokes: true` the planned pen strokes are drawn instead, one colour per
+// stroke, with a dot where each stroke starts.
 import { encodePng } from '../../tests/helpers/images.js';
+
+const STROKE_COLORS = [
+  [210, 40, 40],
+  [30, 120, 220],
+  [230, 140, 20],
+  [140, 60, 200],
+  [20, 160, 140],
+];
 
 function drawLine(paint, a, b, color) {
   const steps = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) * 2) + 1;
@@ -11,58 +21,75 @@ function drawLine(paint, a, b, color) {
   }
 }
 
-export function renderNetwork(result, { scale = 2 } = {}) {
-  const { width, height } = result;
-  const image = new Uint8Array(width * height * 3).fill(255);
-  const paint = (x, y, color) => {
-    const px = Math.round(x - 0.5);
-    const py = Math.round(y - 0.5);
-
-    if (px >= 0 && py >= 0 && px < width && py < height) {
-      image.set(color, (py * width + px) * 3);
-    }
-  };
-
-  for (let index = 0; index < width * height; index += 1) {
-    if (result.skeleton[index]) {
-      image.set([90, 140, 220], index * 3);
-    } else if (result.mask[index]) {
-      image.set([215, 215, 215], index * 3);
-    }
-  }
-
-  const network = result.network ?? result.graph;
-  network.edges.forEach((edge) =>
-    edge.points.forEach((point, index) => {
-      if (index > 0) {
-        drawLine(paint, edge.points[index - 1], point, [210, 40, 40]);
-      }
-    })
-  );
-  network.nodes.forEach((node) => {
-    for (let dy = -1; dy <= 1; dy += 1) {
-      for (let dx = -1; dx <= 1; dx += 1) {
-        paint(node.x + dx, node.y + dy, [20, 150, 60]);
-      }
+function drawPolyline(paint, points, color) {
+  points.forEach((point, index) => {
+    if (index > 0) {
+      drawLine(paint, points[index - 1], point, color);
     }
   });
+}
 
-  const rows = [];
-
-  for (let y = 0; y < height * scale; y += 1) {
-    const row = [];
-
-    for (let x = 0; x < width * scale; x += 1) {
-      const index = (Math.floor(y / scale) * width + Math.floor(x / scale)) * 3;
-      row.push(image[index], image[index + 1], image[index + 2]);
+function drawDot(paint, point, color, radius) {
+  for (let dy = -radius; dy <= radius; dy += 1) {
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      paint(point.x + dx, point.y + dy, color);
     }
+  }
+}
 
-    rows.push(row);
+export function renderNetwork(result, { scale = 2, strokes = false } = {}) {
+  const { width, height } = result;
+  const fullWidth = width * scale;
+  const fullHeight = height * scale;
+  const image = new Uint8Array(fullWidth * fullHeight * 3).fill(255);
+  // Paint in output pixels; `point` is in source pixel coordinates.
+  const paint = (x, y, color) => {
+    const px = Math.floor(x);
+    const py = Math.floor(y);
+
+    if (px >= 0 && py >= 0 && px < fullWidth && py < fullHeight) {
+      image.set(color, (py * fullWidth + px) * 3);
+    }
+  };
+  const scaled = (point) => ({ x: point.x * scale, y: point.y * scale });
+
+  for (let y = 0; y < fullHeight; y += 1) {
+    for (let x = 0; x < fullWidth; x += 1) {
+      const index = Math.floor(y / scale) * width + Math.floor(x / scale);
+
+      if (result.skeleton[index]) {
+        image.set([170, 195, 235], (y * fullWidth + x) * 3);
+      } else if (result.mask[index]) {
+        image.set([215, 215, 215], (y * fullWidth + x) * 3);
+      }
+    }
   }
 
+  const dot = Math.max(1, Math.round(scale / 2));
+
+  if (strokes) {
+    result.strokes.forEach((stroke, index) => {
+      const color = STROKE_COLORS[index % STROKE_COLORS.length];
+      drawPolyline(paint, stroke.points.map(scaled), color);
+      drawDot(paint, scaled(stroke.points[0]), color, dot + 1);
+    });
+  } else {
+    const network = result.network ?? result.graph;
+    network.edges.forEach((edge) =>
+      drawPolyline(paint, edge.points.map(scaled), [210, 40, 40])
+    );
+    network.nodes.forEach((node) =>
+      drawDot(paint, scaled(node), [20, 150, 60], dot)
+    );
+  }
+
+  const rows = Array.from({ length: fullHeight }, (_, y) => [
+    ...image.subarray(y * fullWidth * 3, (y + 1) * fullWidth * 3),
+  ]);
+
   return encodePng({
-    width: width * scale,
-    height: height * scale,
+    width: fullWidth,
+    height: fullHeight,
     colorType: 2,
     bitDepth: 8,
     rows,

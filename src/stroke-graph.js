@@ -1,4 +1,10 @@
 import { leavingDirection, polylineLength } from './geometry.js';
+import {
+  bend,
+  continuationReach,
+  linkEnds,
+  MAX_CONTINUATION_BEND,
+} from './continuation.js';
 import { collapseLassoStems, foldFusedSpurs } from './hairpin.js';
 import { LinksStore } from './links-store.js';
 
@@ -385,6 +391,62 @@ function contractJunctions(store, options) {
   }
 }
 
+/**
+ * Whether the ends `first` and `second` (two link ends each) continue each
+ * other in two straight pairs, one end of each side in each pair.
+ */
+function crossesStraight(first, second) {
+  const straight = (a, b) => bend(a, b) <= MAX_CONTINUATION_BEND;
+
+  return (
+    (straight(first[0], second[0]) && straight(first[1], second[1])) ||
+    (straight(first[0], second[1]) && straight(first[1], second[0]))
+  );
+}
+
+function findSplitCrossing(store, options) {
+  const { crossingLength, reach } = options;
+
+  return store.edges().find((edge) => {
+    const { source, target } = store.get(edge);
+
+    if (
+      source === target ||
+      store.degree(source) !== 3 ||
+      store.degree(target) !== 3 ||
+      store.getData(edge).length >= crossingLength
+    ) {
+      return false;
+    }
+
+    const outer = (node) =>
+      linkEnds(store, node, reach).filter((end) => end.edge !== edge);
+    const first = outer(source);
+    const second = outer(target);
+
+    return (
+      first.length === 2 &&
+      second.length === 2 &&
+      crossesStraight(first, second)
+    );
+  });
+}
+
+/**
+ * Join the two halves of an "X" crossing. Two lines crossing at an angle thin
+ * into two T-junctions joined by a short link; when the four outer links
+ * continue each other straight across that link in two pairs, the junctions
+ * are one crossing, so the pen can draw each line straight through it.
+ */
+function contractCrossings(store, options) {
+  let edge = findSplitCrossing(store, options);
+
+  while (edge !== undefined) {
+    contractEdge(store, edge);
+    edge = findSplitCrossing(store, options);
+  }
+}
+
 function isForeground(mask, width, height, point) {
   const x = Math.floor(point.x);
   const y = Math.floor(point.y);
@@ -521,6 +583,10 @@ export function buildStrokeGraph(input) {
     loopLength: Math.max(4, strokeWidth * 2),
   });
   mergeDegreeTwoNodes(store);
+  contractCrossings(store, {
+    crossingLength: strokeWidth * 2,
+    reach: continuationReach(strokeWidth),
+  });
   collapseLassoStems(store, input);
   trace('contracted', store);
   extendEndpoints(store, {

@@ -9,6 +9,8 @@ const MAX_BRANCHES = 24;
 // be worth a link (half a pen-radius square).
 const MIN_EXPLAINED_SHARE = 0.5;
 const MIN_GAIN = 0.5;
+// A corner shorter than this (in pixels) is a spike, drawn as a U-turn.
+const MIN_CORNER_CUT = 2;
 const STEPS = [
   [1, 0, 1],
   [-1, 0, 1],
@@ -96,14 +98,13 @@ class MinHeap {
   }
 }
 
-function graphSegments(store) {
+function graphSegments(store, skip) {
   const segments = [];
 
   store.edges().forEach((edge) => {
-    const { points } = store.getData(edge);
-    points.slice(1).forEach((point, index) => {
-      segments.push([points[index], point]);
-    });
+    if (edge !== skip) {
+      segments.push(...polylineSegments(store.getData(edge).points));
+    }
   });
 
   store.points().forEach((node) => {
@@ -119,9 +120,13 @@ function graphSegments(store) {
   return segments;
 }
 
-function uncoveredMask(store, input, reach) {
+function polylineSegments(points) {
+  return points.slice(1).map((point, index) => [points[index], point]);
+}
+
+function uncoveredMask(store, input, reach, segments = graphSegments(store)) {
   const { mask, width, height } = input;
-  const grid = segmentGrid(graphSegments(store), width, height, reach);
+  const grid = segmentGrid(segments, width, height, reach);
   const uncovered = new Uint8Array(mask.length);
 
   for (let index = 0; index < mask.length; index += 1) {
@@ -285,12 +290,144 @@ function splitEdge(store, edge, index, width) {
   return node;
 }
 
-function attachBranch(store, anchor, pixels, width, halfWidth) {
+function onInk(from, to, input, depth) {
+  const { distances, width } = input;
+  const steps = Math.max(
+    1,
+    Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) * 2)
+  );
+
+  for (let step = 0; step <= steps; step += 1) {
+    const x = Math.floor(from.x + ((to.x - from.x) * step) / steps);
+    const y = Math.floor(from.y + ((to.y - from.y) * step) / steps);
+
+    if (!(distances[y * width + x] >= depth)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function arcLengths(points) {
+  let walked = 0;
+
+  return points.map((point, index) => {
+    const before = points[Math.max(0, index - 1)];
+    walked += Math.hypot(point.x - before.x, point.y - before.y);
+    return walked;
+  });
+}
+
+/**
+ * The edge's polyline turned into a sharp corner at `tip`: the pen leaves the
+ * edge `cut` pixels before the anchor, goes straight to the tip and rejoins
+ * the edge `cut` pixels after it. The widest cut whose two straight lines
+ * stay inside the ink wins, so the corner the skeleton rounded off (the top
+ * of a 7, the apex of an A, the middle of a 3) is drawn as one sharp turn.
+ */
+function cornerPoints(points, index, tip, input, longest) {
+  const walked = arcLengths(points);
+  const depth = input.strokeWidth / 4;
+
+  for (let cut = Math.ceil(longest); cut >= MIN_CORNER_CUT; cut -= 1) {
+    const before = points.findLastIndex(
+      (_, j) => j < index && walked[index] - walked[j] >= cut
+    );
+    const after = points.findIndex(
+      (_, j) => j > index && walked[j] - walked[index] >= cut
+    );
+    const head = points[Math.max(0, before)];
+    const tail = points.at(after);
+
+    if (onInk(head, tip, input, depth) && onInk(tip, tail, input, depth)) {
+      return [
+        ...points.slice(0, Math.max(0, before) + 1),
+        tip,
+        ...(after === -1 ? [tail] : points.slice(after)),
+      ];
+    }
+  }
+
+  return undefined;
+}
+
+function countUncovered(store, input, skip, polylines) {
+  const segments = [
+    ...graphSegments(store, skip),
+    ...polylines.flatMap(polylineSegments),
+  ];
+  const reach = input.strokeWidth / 2 + Math.SQRT1_2;
+
+  return uncoveredMask(store, input, reach, segments).reduce(
+    (sum, value) => sum + value,
+    0
+  );
+}
+
+/**
+ * A corner is simpler than a dead-end branch (no new link, node or U-turn),
+ * so it wins unless it leaves more ink unexplained than a link is worth: the
+ * straight cut must not skip the ink the rounded edge passed through.
+ */
+function cornerExplains(store, anchor, corner, branch, input) {
+  const { points } = store.getData(anchor.edge);
+  const lost =
+    countUncovered(store, input, anchor.edge, [corner]) -
+    countUncovered(store, input, anchor.edge, [points, branch]);
+
+  return lost < MIN_GAIN * (input.strokeWidth / 2) ** 2;
+}
+
+/** Branch points from the anchor to the tip pulled back inside the ink. */
+function branchPoints(start, pixels, width, halfWidth) {
+  const raw = [start, ...pixels.slice(1).map((p) => pixelCenter(p, width))];
+  return trimEnd(raw, halfWidth - 0.5);
+}
+
+/**
+ * Explain the missed ink at the end of `pixels`. When the branch would leave
+ * an edge from its middle, the edge first tries to turn a sharp corner there;
+ * otherwise the branch is a new dead-end link drawn with a U-turn.
+ */
+function attachBranch(store, anchor, pixels, input) {
+  const { width, strokeWidth } = input;
+  const halfWidth = strokeWidth / 2;
+
+  if (anchor.edge !== undefined) {
+    const data = store.getData(anchor.edge);
+    const branch = branchPoints(
+      data.points[anchor.index],
+      pixels,
+      width,
+      halfWidth
+    );
+    const corner = cornerPoints(
+      data.points,
+      anchor.index,
+      branch.at(-1),
+      input,
+      polylineLength(branch) + strokeWidth
+    );
+
+    if (
+      corner !== undefined &&
+      cornerExplains(store, anchor, corner, branch, input)
+    ) {
+      store.setData(anchor.edge, {
+        ...data,
+        points: corner,
+        length: polylineLength(corner),
+        cornered: true,
+      });
+      return;
+    }
+  }
+
   const node =
     anchor.node ?? splitEdge(store, anchor.edge, anchor.index, width);
   const { x, y } = store.getData(node);
-  const raw = [{ x, y }, ...pixels.slice(1).map((p) => pixelCenter(p, width))];
-  const points = trimEnd(raw, halfWidth - 0.5);
+  const points = branchPoints({ x, y }, pixels, width, halfWidth);
   const tip = points.at(-1);
   const tipNode = store.createPoint({
     x: tip.x,
@@ -394,6 +531,6 @@ export function completeCoverage(store, input) {
       return;
     }
 
-    attachBranch(store, anchors.get(pixels[0]), pixels, width, halfWidth);
+    attachBranch(store, anchors.get(pixels[0]), pixels, input);
   }
 }

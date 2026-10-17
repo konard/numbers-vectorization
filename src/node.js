@@ -362,6 +362,20 @@ const NUMBER_OPTIONS = {
   'stroke-width': 'strokeWidth',
   'fill-holes': 'fillHoles',
   'look-ahead': 'lookAhead',
+  'pen-lift-cost': 'penLiftCost',
+};
+const BOOLEAN_OPTIONS = {
+  'pen-lifts': 'penLifts',
+};
+const BOOLEAN_VALUES = {
+  true: true,
+  on: true,
+  yes: true,
+  1: true,
+  false: false,
+  off: false,
+  no: false,
+  0: false,
 };
 const CHOICE_OPTIONS = {
   foreground: ['dark', 'light', 'auto'],
@@ -391,6 +405,18 @@ export function optionsFromParams(read, defaults = {}) {
       }
 
       options[key] = parsed;
+    }
+  }
+
+  for (const [name, key] of Object.entries(BOOLEAN_OPTIONS)) {
+    const value = read(name);
+
+    if (value !== null && value !== undefined) {
+      if (!(value in BOOLEAN_VALUES)) {
+        throw new Error(`--${name} must be true or false`);
+      }
+
+      options[key] = BOOLEAN_VALUES[value];
     }
   }
 

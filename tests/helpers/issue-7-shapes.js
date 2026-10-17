@@ -74,3 +74,79 @@ export function pressureLine(wideRadius) {
 export function fourRaster(gap) {
   return penRaster(280, 280, [fourStroke(gap)], 8.7);
 }
+
+// Shapes people draw as several pen strokes, each line straight through the
+// crossings: the simplest explanation lifts the pen instead of retracing.
+export const MULTI_STROKE_SHAPES = {
+  plus: [
+    [
+      [100, 30],
+      [100, 170],
+    ],
+    [
+      [30, 100],
+      [170, 100],
+    ],
+  ],
+  cross: [
+    [
+      [40, 40],
+      [160, 160],
+    ],
+    [
+      [160, 40],
+      [40, 160],
+    ],
+  ],
+  tee: [
+    [
+      [30, 40],
+      [170, 40],
+    ],
+    [
+      [100, 40],
+      [100, 170],
+    ],
+  ],
+  // A 7 with a bar through the middle of its leg.
+  seven: [
+    [
+      [40, 30],
+      [160, 30],
+      [80, 170],
+    ],
+    [
+      [75, 100],
+      [145, 100],
+    ],
+  ],
+  // An A: the apex in one stroke, then the bar between the legs.
+  letterA: [
+    [
+      [40, 170],
+      [100, 30],
+      [160, 170],
+    ],
+    [
+      [68, 110],
+      [132, 110],
+    ],
+  ],
+  // A 4 drawn as an "L" and a vertical line crossing its bar.
+  openFour: [
+    [
+      [70, 30],
+      [40, 120],
+      [170, 120],
+    ],
+    [
+      [130, 50],
+      [130, 175],
+    ],
+  ],
+};
+
+/** Rasterize one of the multi-stroke shapes with a web-canvas pen. */
+export function multiStrokeRaster(name) {
+  return penRaster(200, 200, MULTI_STROKE_SHAPES[name], 6);
+}

@@ -38,14 +38,25 @@ describe('a narrow loop is a loop, not zig-zags (issue 7)', () => {
     expect(folded(10).length).toBe(1);
   });
 
-  it('draws a loop of zero width as nearly a line: up and back down', () => {
+  it('draws a loop of zero width as a line: the 4 of two strokes', () => {
+    // Without a gap the loop's two lines are one line, so the ink is the "L"
+    // and the vertical line of a 4 written in two strokes. Lifting the pen
+    // explains it without drawing the vertical line twice.
     const result = vectorizeRasterLine(fourRaster(0));
 
     expect(result.graph.nodes.length).toBe(4);
     expect(result.graph.edges.length).toBe(3);
-    expect(result.strokes.length).toBe(1);
+    expect(result.strokes.length).toBe(2);
+    expect(retrace(result)).toBe(0);
     expect(completedEdges(result)).toBe(0);
     expect(result.coverage.mask >= 0.99).toBe(true);
+  });
+
+  it('draws it in one stroke going up and back down without pen lifts', () => {
+    const result = vectorizeRasterLine(fourRaster(0), { penLifts: false });
+
+    expect(result.strokes.length).toBe(1);
+    expect(retrace(result) > 0).toBe(true);
   });
 });
 

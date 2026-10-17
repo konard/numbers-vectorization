@@ -18,6 +18,17 @@ export interface VectorizationOptions {
   curve?: 'linear' | 'smooth';
   /** Tangent look-ahead (pixels) used to continue strokes at junctions. */
   lookAhead?: number;
+  /**
+   * Lift the pen where lines cross or meet straight (the two strokes of a
+   * "+", "x" or "T", the bar of a "7") instead of retracing an arm with a
+   * U-turn (default `true`).
+   */
+  penLifts?: boolean;
+  /**
+   * Pen widths of retracing one pen lift must save to be used (default 2.5),
+   * so short dead ends and jitter at thick junctions stay one stroke.
+   */
+  penLiftCost?: number;
   /** Receives the stroke graph after each pipeline stage (debugging). */
   trace?: (stage: string, store: LinksStore) => void;
 }
@@ -206,7 +217,7 @@ export declare const vectorizeRaster: typeof vectorizeRasterLine;
  */
 export declare function planStrokes(
   store: LinksStore,
-  options?: { lookAhead?: number }
+  options?: { lookAhead?: number; reach?: number; liftCost?: number }
 ): { start: number; steps: StrokeStep[] }[];
 
 /**

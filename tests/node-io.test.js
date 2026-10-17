@@ -200,6 +200,21 @@ describe('Netpbm, ASCII and JSON decoding', () => {
     ).toThrow();
   });
 
+  it('parses the pen lift options', () => {
+    const params = { 'pen-lifts': 'off', 'pen-lift-cost': '4' };
+
+    expect(optionsFromParams((name) => params[name])).toEqual({
+      penLifts: false,
+      penLiftCost: 4,
+    });
+    expect(
+      optionsFromParams((name) => ({ 'pen-lifts': 'true' })[name])
+    ).toEqual({ penLifts: true });
+    expect(() =>
+      optionsFromParams((name) => ({ 'pen-lifts': 'maybe' })[name])
+    ).toThrow();
+  });
+
   it('formats results as json, svg, path and lino', () => {
     const result = vectorizeRasterLine(parseAsciiRaster(SHAPES.six.join('\n')));
     const json = JSON.parse(formatResult(result, 'json').body);
