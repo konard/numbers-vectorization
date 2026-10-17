@@ -7,7 +7,8 @@ const MAX_EXACT_PAIRING_NODES = 16;
 // i.e. down and to the left.
 const START_DIRECTION = { x: -1, y: 1 };
 
-function connectedComponents(store) {
+/** Connected components of the stroke network: separate shapes. */
+export function connectedComponents(store) {
   const parent = new Map(store.points().map((node) => [node, node]));
   const find = (node) => {
     let root = node;

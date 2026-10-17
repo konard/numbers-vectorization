@@ -33,6 +33,12 @@ the research behind it and before/after measurements.
   lines cross or meet straight (the two strokes of a `+`, `x` or `T`, the bar
   of a `7`) saves more than 2.5 pen widths of retracing per lift
   (`penLifts`, `penLiftCost`).
+- **Fewest points**: each separate shape is simplified on its own with the
+  tolerance whose description is shortest: pixels drawn wrong plus one
+  pen-width square of ink per point (`simplifyTolerance: 'auto'`,
+  `pointCost`). A manual tolerance or a point budget per shape
+  (`maxPoints`, down to one dot per shape) overrides it, and
+  `result.simplification` reports the tolerance, points and match per shape.
 - **Outputs**: SVG path (`linear` polyline or `smooth` cubic Bézier),
   standalone SVG, strokes with steps, the stroke graph, coverage metrics and
   [Links Notation](https://github.com/link-foundation/links-notation)
@@ -83,8 +89,10 @@ console.log(result.lino); // stroke graph in Links Notation
 ```
 
 Options: `threshold`, `alphaThreshold`, `foreground` (`dark` | `light` |
-`auto`), `simplifyTolerance`, `strokeWidth`, `fillHoles`, `curve` (`linear` |
-`smooth`), `lookAhead` and `trace` (a debugging callback per pipeline stage).
+`auto`), `simplifyTolerance` (pixels or `auto`, the default), `pointCost`,
+`maxPoints`, `strokeWidth`, `fillHoles`, `curve` (`linear` | `smooth`),
+`lookAhead`, `penLifts`, `penLiftCost` and `trace` (a debugging callback per
+pipeline stage).
 
 Node-only helpers (image decoders and output formatting) and the HTTP server
 are separate entry points so the main entry stays browser-safe:
@@ -125,7 +133,8 @@ curl -H 'content-type: application/json' \
 `POST /vectorize` accepts an image body or JSON
 `{ width, height, pixels, options }`. Query parameters: `format`, `threshold`,
 `foreground`, `simplify`, `stroke-width`, `fill-holes`, `curve`,
-`look-ahead`, `pen-lifts`, `pen-lift-cost`.
+`look-ahead`, `pen-lifts`, `pen-lift-cost`, `point-cost`, `max-points`
+(`simplify` also takes `auto`).
 
 ### Docker
 

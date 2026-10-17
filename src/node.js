@@ -350,6 +350,7 @@ export function resultToJson(result) {
     strokes: result.strokes,
     graph: result.graph,
     coverage: result.coverage,
+    simplification: result.simplification,
     svg: result.svg,
     lino: result.lino,
   };
@@ -363,6 +364,8 @@ const NUMBER_OPTIONS = {
   'fill-holes': 'fillHoles',
   'look-ahead': 'lookAhead',
   'pen-lift-cost': 'penLiftCost',
+  'point-cost': 'pointCost',
+  'max-points': 'maxPoints',
 };
 const BOOLEAN_OPTIONS = {
   'pen-lifts': 'penLifts',
@@ -382,6 +385,34 @@ const CHOICE_OPTIONS = {
   curve: ['linear', 'smooth'],
 };
 
+function parseNumberParam(name, value) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`--${name} must be a finite number`);
+  }
+
+  return parsed;
+}
+
+function parseBooleanParam(name, value) {
+  if (!(value in BOOLEAN_VALUES)) {
+    throw new Error(`--${name} must be true or false`);
+  }
+
+  return BOOLEAN_VALUES[value];
+}
+
+function parseChoiceParam(name, value) {
+  if (!CHOICE_OPTIONS[name].includes(value)) {
+    throw new Error(
+      `--${name} must be one of: ${CHOICE_OPTIONS[name].join(', ')}`
+    );
+  }
+
+  return value;
+}
+
 /**
  * Build `vectorizeRasterLine` options from string parameters (CLI flags or
  * URL query parameters). Unknown parameters are ignored.
@@ -393,42 +424,24 @@ const CHOICE_OPTIONS = {
  */
 export function optionsFromParams(read, defaults = {}) {
   const options = { ...defaults };
+  const parsers = [
+    [NUMBER_OPTIONS, parseNumberParam],
+    [BOOLEAN_OPTIONS, parseBooleanParam],
+    [
+      Object.fromEntries(Object.keys(CHOICE_OPTIONS).map((n) => [n, n])),
+      parseChoiceParam,
+    ],
+  ];
 
-  for (const [name, key] of Object.entries(NUMBER_OPTIONS)) {
-    const value = read(name);
+  for (const [names, parse] of parsers) {
+    for (const [name, key] of Object.entries(names)) {
+      const value = read(name);
 
-    if (value !== null && value !== undefined) {
-      const parsed = Number(value);
-
-      if (!Number.isFinite(parsed)) {
-        throw new Error(`--${name} must be a finite number`);
+      if (name === 'simplify' && value === 'auto') {
+        options[key] = 'auto';
+      } else if (value !== null && value !== undefined) {
+        options[key] = parse(name, value);
       }
-
-      options[key] = parsed;
-    }
-  }
-
-  for (const [name, key] of Object.entries(BOOLEAN_OPTIONS)) {
-    const value = read(name);
-
-    if (value !== null && value !== undefined) {
-      if (!(value in BOOLEAN_VALUES)) {
-        throw new Error(`--${name} must be true or false`);
-      }
-
-      options[key] = BOOLEAN_VALUES[value];
-    }
-  }
-
-  for (const [name, choices] of Object.entries(CHOICE_OPTIONS)) {
-    const value = read(name);
-
-    if (value !== null && value !== undefined) {
-      if (!choices.includes(value)) {
-        throw new Error(`--${name} must be one of: ${choices.join(', ')}`);
-      }
-
-      options[name] = value;
     }
   }
 

@@ -1,13 +1,5 @@
 import { roundNumber } from './geometry.js';
-import { isReached, segmentGrid } from './segment-grid.js';
-
-function toSegments(strokes) {
-  return strokes.flatMap((points) =>
-    points.length === 1
-      ? [[points[0], points[0]]]
-      : points.slice(1).map((point, index) => [points[index], point])
-  );
-}
+import { isReached, polylineSegments, segmentGrid } from './segment-grid.js';
 
 function coveredRatio(pixels, raster, segments, tolerance) {
   if (pixels.length === 0) {
@@ -82,7 +74,7 @@ function inkPrecision(segments, mask, width, height) {
  */
 export function measureCoverage(input, strokes) {
   const { width, height, mask, skeleton, strokeWidth } = input;
-  const segments = toSegments(strokes);
+  const segments = polylineSegments(strokes);
   const halfWidth = strokeWidth / 2;
   const skeletonCoverage = coveredRatio(
     activePixels(skeleton),

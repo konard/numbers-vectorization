@@ -10,7 +10,21 @@ export interface VectorizationOptions {
   alphaThreshold?: number;
   /** `auto` detects the ink polarity and picks an Otsu threshold. */
   foreground?: 'dark' | 'light' | 'auto';
-  simplifyTolerance?: number;
+  /**
+   * Simplification tolerance in pixels, or `auto` (default) to choose it per
+   * shape: the fewest points that still explain the shape's ink.
+   */
+  simplifyTolerance?: number | 'auto';
+  /**
+   * Pen-width squares of ink one point must explain to be worth adding when
+   * the tolerance is `auto` (default 1): larger values give fewer points.
+   */
+  pointCost?: number;
+  /**
+   * Most points per separate shape. Small budgets keep the longest strokes
+   * and their sharpest corners; `1` leaves one dot per shape.
+   */
+  maxPoints?: number;
   strokeWidth?: number;
   /** Largest enclosed background hole (in pixels) filled before thinning. */
   fillHoles?: number;
@@ -98,6 +112,16 @@ export interface Coverage {
   uncoveredSkeletonPixels: number[];
 }
 
+export interface ShapeSimplification {
+  /** Indices into `strokes` before a point budget dropped any. */
+  strokes: number[];
+  /** Tolerance (pixels) chosen for the shape; 0 for a dot. */
+  tolerance: number;
+  points: number;
+  /** Intersection over union of the drawn pen and the shape's ink (0..1). */
+  match: number;
+}
+
 export interface VectorizationResult {
   width: number;
   height: number;
@@ -110,6 +134,11 @@ export interface VectorizationResult {
   strokeWidth: number;
   graph: StrokeGraph;
   coverage: Coverage & { edges: { total: number; traversed: number } };
+  /** Simplification per separate shape (connected component). */
+  simplification: {
+    tolerance: number | 'auto';
+    shapes: ShapeSimplification[];
+  };
   /** The stroke graph as doublet links. */
   links: LinksStore;
   svg: string;

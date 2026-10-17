@@ -2,13 +2,7 @@ import { completeCoverage } from './completion.js';
 import { continuationReach, DEFAULT_PEN_LIFT_COST } from './continuation.js';
 import { measureCoverage } from './coverage.js';
 import { distanceToBackground } from './distance.js';
-import {
-  DEFAULT_SIMPLIFY_TOLERANCE,
-  polylineLength,
-  roundNumber,
-  simplifyCenterline,
-  simplifyPolyline,
-} from './geometry.js';
+import { polylineLength, roundNumber, simplifyPolyline } from './geometry.js';
 import { toLinksNotation } from './links-notation.js';
 import { LinksStore } from './links-store.js';
 import { fillSmallHoles, labelComponents, rasterToMask } from './raster.js';
@@ -17,6 +11,7 @@ import {
   estimateSkeletonStrokeWidth,
   skeletonNeighbors,
 } from './stroke-graph.js';
+import { budgetPolylines, simplifyShapes } from './simplification.js';
 import { createSvgDocument, strokesToSvgPath } from './svg.js';
 import { thinRasterMask } from './thinning.js';
 import { planStrokes, strokePoints } from './traversal.js';
@@ -49,6 +44,7 @@ export const delay = (ms) =>
   new Promise((resolve) => globalThis.setTimeout(resolve, ms));
 
 export {
+  budgetPolylines,
   createSvgDocument,
   fillSmallHoles,
   labelComponents,
@@ -104,8 +100,7 @@ function describeGraph(store) {
   };
 }
 
-function describeStroke(store, stroke) {
-  const points = strokePoints(store, stroke, 'simplified');
+function describeStroke(store, stroke, points) {
   const retraceLength = stroke.steps
     .filter((step) => step.retrace)
     .reduce((sum, step) => sum + store.getData(step.edge).length, 0);
@@ -144,14 +139,16 @@ function edgeCoverage(store, strokes) {
  * 4. plan one pen stroke per connected component with route inspection
  *    (Chinese postman) and Fleury's algorithm, so that every branch, loop and
  *    dead end is drawn, retracing (U-turning over) as little as possible;
- * 5. simplify each branch and serialize the strokes as SVG subpaths.
+ * 5. simplify each shape with the fewest points that still explain its ink
+ *    (or within a point budget) and serialize the strokes as SVG subpaths.
  *
  * @param {{ width: number, height: number, pixels?: ArrayLike<number>,
  * data?: ArrayLike<number> }} raster - Raster image data.
  * @param {{ threshold?: number, alphaThreshold?: number,
- * foreground?: 'dark' | 'light', simplifyTolerance?: number,
- * strokeWidth?: number, fillHoles?: number, curve?: 'linear' | 'smooth',
- * lookAhead?: number, penLifts?: boolean, penLiftCost?: number }} [options] -
+ * foreground?: 'dark' | 'light', simplifyTolerance?: number | 'auto',
+ * pointCost?: number, maxPoints?: number, strokeWidth?: number,
+ * fillHoles?: number, curve?: 'linear' | 'smooth', lookAhead?: number,
+ * penLifts?: boolean, penLiftCost?: number }} [options] -
  * Vectorization options.
  * @returns {import('./index.d.ts').VectorizationResult} Vectorization result.
  */
@@ -184,16 +181,6 @@ export function vectorizeRasterLine(raster, options = {}) {
     strokeWidth: penWidth,
   });
   options.trace?.('completed', store);
-  const tolerance = options.simplifyTolerance ?? DEFAULT_SIMPLIFY_TOLERANCE;
-
-  store.edges().forEach((edge) => {
-    const data = store.getData(edge);
-    store.setData(edge, {
-      ...data,
-      simplified: simplifyCenterline(data.points, tolerance),
-    });
-  });
-
   const planned = planStrokes(store, {
     lookAhead: options.lookAhead,
     reach: continuationReach(penWidth),
@@ -202,7 +189,21 @@ export function vectorizeRasterLine(raster, options = {}) {
         ? Infinity
         : penWidth * (options.penLiftCost ?? DEFAULT_PEN_LIFT_COST),
   });
-  const strokes = planned.map((stroke) => describeStroke(store, stroke));
+  const simplification = simplifyShapes(
+    store,
+    planned,
+    { mask, width, height, penWidth },
+    {
+      tolerance: options.simplifyTolerance,
+      pointCost: options.pointCost,
+      maxPoints: options.maxPoints,
+    }
+  );
+  // A point budget may drop the shortest strokes of a shape.
+  const strokes = planned
+    .map((stroke, index) => [stroke, simplification.points[index]])
+    .filter(([, points]) => points !== null)
+    .map(([stroke, points]) => describeStroke(store, stroke, points));
   const graphLength = store
     .edges()
     .reduce((sum, edge) => sum + store.getData(edge).length, 0);
@@ -226,6 +227,10 @@ export function vectorizeRasterLine(raster, options = {}) {
     coverage: {
       ...coverage,
       edges: edgeCoverage(store, planned),
+    },
+    simplification: {
+      tolerance: options.simplifyTolerance ?? 'auto',
+      shapes: simplification.shapes,
     },
     links: store,
     svg: '',

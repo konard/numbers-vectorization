@@ -1,6 +1,6 @@
 import { polylineLength } from './geometry.js';
 import { labelComponents } from './raster.js';
-import { isReached, segmentGrid } from './segment-grid.js';
+import { isReached, polylineSegments, segmentGrid } from './segment-grid.js';
 
 const MAX_BRANCHES = 24;
 // The simplest explanation wins: a completion branch is one more link, so it
@@ -103,7 +103,7 @@ function graphSegments(store, skip) {
 
   store.edges().forEach((edge) => {
     if (edge !== skip) {
-      segments.push(...polylineSegments(store.getData(edge).points));
+      segments.push(...polylineSegments([store.getData(edge).points]));
     }
   });
 
@@ -118,10 +118,6 @@ function graphSegments(store, skip) {
   });
 
   return segments;
-}
-
-function polylineSegments(points) {
-  return points.slice(1).map((point, index) => [points[index], point]);
 }
 
 function uncoveredMask(store, input, reach, segments = graphSegments(store)) {
@@ -355,7 +351,7 @@ function cornerPoints(points, index, tip, input, longest) {
 function countUncovered(store, input, skip, polylines) {
   const segments = [
     ...graphSegments(store, skip),
-    ...polylines.flatMap(polylineSegments),
+    ...polylineSegments(polylines),
   ];
   const reach = input.strokeWidth / 2 + Math.SQRT1_2;
 

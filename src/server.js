@@ -107,7 +107,8 @@ function usage(info) {
         'Body: PNG, PBM/PGM/PPM, ASCII art, or JSON { width, height, pixels, options }. ' +
         'Query: format=json|svg|path|lino, threshold, foreground=dark|light|auto, ' +
         'simplify, stroke-width, fill-holes, curve=linear|smooth, look-ahead, ' +
-        'pen-lifts=true|false, pen-lift-cost',
+        'pen-lifts=true|false, pen-lift-cost, simplify=auto|<n>, point-cost, ' +
+        'max-points',
     },
   };
 }

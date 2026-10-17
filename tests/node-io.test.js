@@ -215,12 +215,26 @@ describe('Netpbm, ASCII and JSON decoding', () => {
     ).toThrow();
   });
 
+  it('parses the simplification options', () => {
+    const params = { simplify: 'auto', 'point-cost': '2', 'max-points': '1' };
+
+    expect(optionsFromParams((name) => params[name])).toEqual({
+      simplifyTolerance: 'auto',
+      pointCost: 2,
+      maxPoints: 1,
+    });
+    expect(() =>
+      optionsFromParams((name) => ({ 'max-points': 'many' })[name])
+    ).toThrow();
+  });
+
   it('formats results as json, svg, path and lino', () => {
     const result = vectorizeRasterLine(parseAsciiRaster(SHAPES.six.join('\n')));
     const json = JSON.parse(formatResult(result, 'json').body);
 
     expect(json.coverage.skeleton).toBe(1);
     expect(json.mask).toBe(undefined);
+    expect(json.simplification.tolerance).toBe('auto');
     expect(formatResult(result, 'svg').contentType).toBe('image/svg+xml');
     expect(formatResult(result, 'path').body).toBe(result.path);
     expect(formatResult(result, 'lino').body).toBe(result.lino);
