@@ -67,6 +67,11 @@ export interface StrokeGraph {
     pixels: number[];
     /** Added by coverage completion rather than traced from the skeleton. */
     completed: boolean;
+    /**
+     * A narrow loop explaining ink wider than one pen line: the pen went out
+     * on one side and came back on the other (issue #7).
+     */
+    folded: boolean;
   }[];
 }
 

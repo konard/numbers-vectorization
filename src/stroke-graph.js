@@ -1,4 +1,5 @@
 import { leavingDirection, polylineLength } from './geometry.js';
+import { collapseLassoStems, foldFusedSpurs } from './hairpin.js';
 import { LinksStore } from './links-store.js';
 
 const FOUR_OFFSETS = [
@@ -333,16 +334,30 @@ function contractEdge(store, edge) {
   store.incident(keep).forEach((other) => setEdgeEnd(store, other, keep));
 }
 
-function findShortJunctionEdge(store, limit) {
+function findShortJunctionEdge(store, options) {
+  const { junctionLength, distances } = options;
+
   return store.edges().find((edge) => {
     const { source, target } = store.get(edge);
 
-    return (
-      source !== target &&
-      store.degree(source) >= 3 &&
-      store.degree(target) >= 3 &&
-      store.getData(edge).length < limit
+    if (
+      source === target ||
+      store.degree(source) < 3 ||
+      store.degree(target) < 3
+    ) {
+      return false;
+    }
+
+    // Two junctions whose maximal ink disks contain each other's centre are
+    // one junction region of the medial axis (a narrow loop whose lines fuse
+    // where they meet the bar, two strokes crossing at a shallow angle).
+    const limit = Math.max(
+      junctionLength,
+      nodeRadius(store, source, distances) - 0.5,
+      nodeRadius(store, target, distances) - 0.5
     );
+
+    return store.getData(edge).length < limit;
   });
 }
 
@@ -351,11 +366,11 @@ function findShortJunctionEdge(store, limit) {
  * T-junctions a pixel or two apart, and leaves tiny loops around pinholes.
  */
 function contractJunctions(store, options) {
-  let edge = findShortJunctionEdge(store, options.junctionLength);
+  let edge = findShortJunctionEdge(store, options);
 
   while (edge !== undefined) {
     contractEdge(store, edge);
-    edge = findShortJunctionEdge(store, options.junctionLength);
+    edge = findShortJunctionEdge(store, options);
   }
 
   for (const loop of store.edges().filter((id) => isLoop(store, id))) {
@@ -472,7 +487,9 @@ export function estimateSkeletonStrokeWidth(skeleton, distances) {
  * Nodes are endpoints, junctions, isolated dots and loop anchors; edges are
  * the pixel chains between them. The raw graph is then cleaned up: spurs are
  * pruned, short junction-to-junction links contracted, degree-2 nodes merged
- * and free stroke ends extended back to the ink boundary.
+ * and free stroke ends extended back to the ink boundary. Ink wider than one
+ * pen line that hangs from a junction (a lasso stem or a thick dead end) is
+ * explained as the narrow loop it was drawn as.
  *
  * @param {{ skeleton: Uint8Array, mask: Uint8Array, width: number,
  * height: number, distances: Float64Array, strokeWidth: number }} input -
@@ -499,10 +516,12 @@ export function buildStrokeGraph(input) {
   trace('pruned', store);
   mergeDegreeTwoNodes(store);
   contractJunctions(store, {
+    distances: input.distances,
     junctionLength: Math.max(2, halfWidth),
     loopLength: Math.max(4, strokeWidth * 2),
   });
   mergeDegreeTwoNodes(store);
+  collapseLassoStems(store, input);
   trace('contracted', store);
   extendEndpoints(store, {
     mask: input.mask,
@@ -512,6 +531,8 @@ export function buildStrokeGraph(input) {
     halfWidth,
   });
   trace('extended', store);
+  foldFusedSpurs(store, input);
+  trace('folded', store);
 
   return store;
 }

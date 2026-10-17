@@ -97,6 +97,7 @@ function describeGraph(store) {
         points: data.simplified,
         pixels: [...data.pixels],
         completed: Boolean(data.completed),
+        folded: Boolean(data.folded),
       };
     }),
   };

@@ -3,6 +3,12 @@ import { labelComponents } from './raster.js';
 import { isReached, segmentGrid } from './segment-grid.js';
 
 const MAX_BRANCHES = 24;
+// The simplest explanation wins: a completion branch is one more link, so it
+// must explain most of the ink blob it reaches into (not a sliver along a
+// thick stroke, which a perpendicular stub only nibbles at), and enough ink to
+// be worth a link (half a pen-radius square).
+const MIN_EXPLAINED_SHARE = 0.5;
+const MIN_GAIN = 0.5;
 const STEPS = [
   [1, 0, 1],
   [-1, 0, 1],
@@ -312,6 +318,19 @@ function geodesicPath(previous, target) {
 }
 
 /**
+ * Share of an uncovered blob that the pen reaches along a branch. The branch
+ * is a chain of adjacent pixels, so testing its pixel centers is enough.
+ */
+function explainedPixels(pixels, path, width, reach) {
+  const centers = path.map((pixel) => pixelCenter(pixel, width));
+
+  return pixels.filter((pixel) => {
+    const { x, y } = pixelCenter(pixel, width);
+    return centers.some((c) => Math.hypot(c.x - x, c.y - y) <= reach);
+  }).length;
+}
+
+/**
  * Pick the largest uncovered blob that a worthwhile branch can reach: the
  * blob must contain ink missed by a clear margin, and the branch to its
  * farthest pixel must stay longer than half the pen radius once its tip is
@@ -335,7 +354,13 @@ function pickBranch(components, deep, geodesics, width, halfWidth) {
     const path = geodesicPath(previous, far);
     const length = polylineLength(path.map((p) => pixelCenter(p, width)));
 
-    if (length >= minimum) {
+    const gain = explainedPixels(pixels, path, width, halfWidth + Math.SQRT1_2);
+
+    if (
+      length >= minimum &&
+      gain >= MIN_EXPLAINED_SHARE * pixels.length &&
+      gain >= MIN_GAIN * halfWidth ** 2
+    ) {
       return path;
     }
   }

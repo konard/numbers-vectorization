@@ -3,7 +3,8 @@
 // bloating the repository.
 //
 // Usage: node experiments/issue-5-downscale-issue-images.mjs <input.png>...
-// Writes <case-study>/images/issue-<n>.png for the n-th input.
+// Writes <case-study>/images/issue-<n>.png for the n-th input. Set
+// CASE_STUDY=issue-7 to write into another case study (reused for issue #7).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { URL } from 'node:url';
 
@@ -11,7 +12,11 @@ import { decodePng } from '../src/node.js';
 import { encodePng } from '../tests/helpers/images.js';
 
 const FACTOR = 4;
-const OUTPUT = new URL('../docs/case-studies/issue-5/images/', import.meta.url);
+const CASE_STUDY = process.env.CASE_STUDY ?? 'issue-5';
+const OUTPUT = new URL(
+  `../docs/case-studies/${CASE_STUDY}/images/`,
+  import.meta.url
+);
 
 function downscale({ width, height, pixels }) {
   const outWidth = Math.floor(width / FACTOR);
