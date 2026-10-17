@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'test-anywhere';
+import { readFileSync } from 'node:fs';
 import { Parser } from 'links-notation';
+
+import { simplifyCenterline } from '../src/geometry.js';
 
 import {
   beginPenStroke,
@@ -162,5 +165,54 @@ describe('pen movement recording (issue 7)', () => {
     for (const stroke of result.strokes) {
       expect(stroke.points.length).toBe(2);
     }
+  });
+
+  it('draws a slanted stroke straight through the bar that crosses it', () => {
+    // examples/recordings/seven-barred.lino: a 7 and the bar across its
+    // diagonal. The crossing must not bend the diagonal (3 + 2 points).
+    const recording = parsePenRecording(
+      readFileSync('examples/recordings/seven-barred.lino', 'utf8')
+    );
+    const result = vectorizeRasterLine(
+      rasterizePenRecording(recording),
+      recording.options
+    );
+
+    expect(recording.options).toEqual(DRAW_OPTIONS);
+    expect(result.strokes.map((stroke) => stroke.points.length)).toEqual([
+      3, 2,
+    ]);
+    expect(result.coverage.links.traversed).toBe(result.coverage.links.total);
+  });
+});
+
+describe('corners and jogs (issue 7)', () => {
+  // A line that steps 4 px sideways and carries on, like a stroke routed
+  // through the junction where another stroke crosses it.
+  const jog = [
+    ...Array.from({ length: 21 }, (_, x) => ({ x, y: 0 })),
+    { x: 21, y: 2 },
+    ...Array.from({ length: 21 }, (_, x) => ({ x: 22 + x, y: 4 })),
+  ];
+
+  it('keeps sharp corners when no pen width is given', () => {
+    expect(simplifyCenterline(jog, 5).length > 2).toBe(true);
+  });
+
+  it('simplifies a jog narrower than the pen like any other point', () => {
+    expect(simplifyCenterline(jog, 5, 12)).toEqual([jog[0], jog.at(-1)]);
+  });
+
+  it('keeps a real corner even within one pen width', () => {
+    const corner = [
+      ...Array.from({ length: 21 }, (_, x) => ({ x, y: 0 })),
+      ...Array.from({ length: 20 }, (_, y) => ({ x: 20, y: y + 1 })),
+    ];
+
+    expect(simplifyCenterline(corner, 5, 12)).toEqual([
+      corner[0],
+      corner[20],
+      corner.at(-1),
+    ]);
   });
 });

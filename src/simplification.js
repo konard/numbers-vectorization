@@ -110,7 +110,7 @@ function tuneShape(strokes, input, options) {
   const pointArea = options.pointCost * input.penWidth ** 2;
   const levels = tolerances.map((tolerance) => {
     const polylines = strokes.map((points) =>
-      simplifyCenterline(points, tolerance)
+      simplifyCenterline(points, tolerance, input.penWidth)
     );
     const fit = measureFit(polylines, box, ink, input);
     const points = countPoints(polylines);
@@ -384,7 +384,11 @@ export function simplifyShapes(store, strokes, input, options = {}) {
       const data = store.getData(edge);
       store.setData(edge, {
         ...data,
-        simplified: simplifyCenterline(data.points, tuned.tolerance),
+        simplified: simplifyCenterline(
+          data.points,
+          tuned.tolerance,
+          input.penWidth
+        ),
       });
     });
     order.forEach((index, i) => {
