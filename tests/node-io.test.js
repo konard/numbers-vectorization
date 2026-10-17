@@ -261,6 +261,28 @@ describe('vectorize CLI command', () => {
     }
   });
 
+  it('vectorizes pen recordings saved as Links Notation or JSON', () => {
+    const [lino, json] = ['lino', 'json'].map((extension) =>
+      captureCli([
+        'vectorize',
+        `examples/recordings/seven-barred.${extension}`,
+        '--format',
+        'json',
+      ])
+    );
+    const result = JSON.parse(lino.stdout);
+
+    expect(lino.code).toBe(0);
+    expect(json.stdout).toBe(lino.stdout);
+    expect(result.strokes.length).toBe(2);
+    // The recorded options are used: a fixed threshold, not Otsu.
+    expect(result.thresholding).toEqual({
+      foreground: 'dark',
+      threshold: 32,
+      auto: false,
+    });
+  });
+
   it('produces the same strokes for both polarities of the same digit', () => {
     const fromPng = captureCli([
       'vectorize',

@@ -4,8 +4,26 @@ import { measureCoverage } from './coverage.js';
 import { distanceToBackground } from './distance.js';
 import { polylineLength, roundNumber, simplifyPolyline } from './geometry.js';
 import { toLinksNotation } from './links-notation.js';
+export {
+  DEFAULT_BRUSH,
+  PEN_RECORDING_TYPE,
+  beginPenStroke,
+  createPenRecording,
+  extendPenStroke,
+  isPenRecordingText,
+  parsePenRecording,
+  penRecordingDuration,
+  penRecordingSegments,
+  penRecordingToLinksNotation,
+  rasterizePenRecording,
+} from './pen-recording.js';
 import { LinksStore } from './links-store.js';
-import { fillSmallHoles, labelComponents, rasterToMask } from './raster.js';
+import {
+  fillSmallHoles,
+  labelComponents,
+  rasterToMask,
+  resolveThreshold,
+} from './raster.js';
 import {
   buildStrokeNetwork,
   estimateSkeletonStrokeWidth,
@@ -52,6 +70,7 @@ export {
   measureCoverage,
   planStrokes,
   rasterToMask,
+  resolveThreshold,
   simplifyPolyline,
   skeletonNeighbors,
   strokesToSvgPath,
@@ -246,6 +265,7 @@ export function vectorizeRasterLine(raster, options = {}) {
       'edges',
       'links'
     ),
+    thresholding: resolveThreshold(raster, options),
     simplification: {
       tolerance: options.simplifyTolerance ?? 'auto',
       shapes: simplification.shapes,

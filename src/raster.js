@@ -142,6 +142,31 @@ function resolveAutoOptions(raster, pixels, options) {
 }
 
 /**
+ * The ink polarity and threshold `rasterToMask` uses for these options, with
+ * the defaults filled in. `auto` is true when the threshold was chosen
+ * automatically (Otsu's method).
+ *
+ * @param {{ width: number, height: number, pixels?: ArrayLike<number>,
+ * data?: ArrayLike<number> }} raster - Raster image data.
+ * @param {{ threshold?: number, alphaThreshold?: number,
+ * foreground?: 'dark' | 'light' | 'auto' }} [options] - Thresholding options.
+ * @returns {{ foreground: 'dark' | 'light', threshold: number,
+ * auto: boolean }} Resolved thresholding.
+ */
+export function resolveThreshold(raster, options = {}) {
+  const pixels = assertRasterShape(raster);
+  const rgba = pixels.length === raster.width * raster.height * 4;
+  const resolved = resolveAutoOptions(raster, pixels, options);
+
+  return {
+    foreground: resolved.foreground ?? (rgba ? 'dark' : 'light'),
+    threshold:
+      resolved.threshold ?? (rgba ? DEFAULT_RGBA_THRESHOLD : DEFAULT_THRESHOLD),
+    auto: options.foreground === 'auto' && options.threshold === undefined,
+  };
+}
+
+/**
  * Convert a grayscale, binary, or RGBA raster into a 0/1 foreground mask.
  *
  * One-channel rasters use non-zero, light-on-dark semantics by default because

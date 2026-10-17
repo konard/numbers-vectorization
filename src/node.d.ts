@@ -24,8 +24,16 @@ export declare function parseAsciiRaster(text: string): DecodedRaster;
 /** Detects PNG, Netpbm, JSON or ASCII input and decodes it. */
 export declare function decodeImage(bytes: Uint8Array): {
   raster: RasterInput;
-  format: 'png' | 'pnm' | 'json' | 'ascii';
+  format: 'png' | 'pnm' | 'json' | 'pen-recording' | 'ascii';
+  /** Options a pen recording was saved with. */
+  options?: VectorizationOptions;
 };
+
+/** Default vectorization options for a decoded input. */
+export declare function defaultOptionsFor(decoded: {
+  format: string;
+  options?: VectorizationOptions;
+}): VectorizationOptions;
 
 /** Plain JSON view of a vectorization result. */
 export declare function resultToJson(

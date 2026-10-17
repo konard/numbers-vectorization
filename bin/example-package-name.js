@@ -4,7 +4,12 @@ import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 
 import { add, multiply, vectorizeRasterLine } from '../src/index.js';
-import { decodeImage, formatResult, optionsFromParams } from '../src/node.js';
+import {
+  decodeImage,
+  defaultOptionsFor,
+  formatResult,
+  optionsFromParams,
+} from '../src/node.js';
 import { startServer } from '../src/server.js';
 
 const COMMANDS = {
@@ -93,11 +98,12 @@ function runVectorize(args, stdout) {
   }
 
   const bytes = new Uint8Array(readFileSync(file === '-' ? 0 : file));
-  const { raster, format } = decodeImage(bytes);
-  const options = optionsFromParams((name) => flags.get(name), {
-    foreground: format === 'ascii' || format === 'json' ? undefined : 'auto',
-  });
-  const result = vectorizeRasterLine(raster, options);
+  const decoded = decodeImage(bytes);
+  const options = optionsFromParams(
+    (name) => flags.get(name),
+    defaultOptionsFor(decoded)
+  );
+  const result = vectorizeRasterLine(decoded.raster, options);
   const output = formatResult(result, flags.get('format') ?? 'svg');
 
   if (flags.has('output')) {

@@ -132,6 +132,12 @@ export interface Coverage {
   uncoveredSkeletonPixels: number[];
 }
 
+export interface Thresholding {
+  foreground: 'dark' | 'light';
+  threshold: number;
+  auto: boolean;
+}
+
 export interface ShapeSimplification {
   /** Indices into `strokes` before a point budget dropped any. */
   strokes: number[];
@@ -161,6 +167,8 @@ export interface VectorizationResult {
     /** @deprecated Use `links`. */
     readonly edges: { total: number; traversed: number };
   };
+  /** Ink polarity and threshold used, `auto` when Otsu chose it. */
+  thresholding: Thresholding;
   /** Simplification per separate shape (connected component). */
   simplification: {
     tolerance: number | 'auto';
@@ -226,6 +234,12 @@ export declare function rasterToMask(
   raster: RasterInput,
   options?: VectorizationOptions
 ): Uint8Array;
+
+/** The ink polarity and threshold `rasterToMask` uses for these options. */
+export declare function resolveThreshold(
+  raster: RasterInput,
+  options?: VectorizationOptions
+): Thresholding;
 
 /**
  * Thins a binary mask to a one-pixel centerline using Zhang-Suen thinning.
@@ -338,3 +352,65 @@ export declare function skeletonNeighbors(
   height: number,
   index: number
 ): number[];
+
+export interface PenSample {
+  /** Canvas pixels. */
+  x: number;
+  y: number;
+  /** Milliseconds since the recording started. */
+  t: number;
+  /** 0..1 (0.5 for devices without pressure). */
+  pressure: number;
+}
+
+export interface PenBrush {
+  /** Pen width at zero pressure (pixels). */
+  width: number;
+  /** Extra width at full pressure (pixels). */
+  pressureWidth: number;
+}
+
+/** Pen movement drawn on a canvas, for replay and error reports (issue 7). */
+export interface PenRecording {
+  type: 'pen-recording';
+  version: 1;
+  width: number;
+  height: number;
+  brush: PenBrush;
+  strokes: { pointer: string; samples: PenSample[] }[];
+  /** Vectorization options in use when the recording was saved. */
+  options?: VectorizationOptions;
+}
+
+export declare const PEN_RECORDING_TYPE: 'pen-recording';
+export declare const DEFAULT_BRUSH: Readonly<PenBrush>;
+export declare function createPenRecording(canvas: {
+  width: number;
+  height: number;
+  brush?: PenBrush;
+}): PenRecording;
+export declare function beginPenStroke(
+  recording: PenRecording,
+  point: { x: number; y: number; t: number; pressure?: number },
+  pointer?: string
+): void;
+export declare function extendPenStroke(
+  recording: PenRecording,
+  point: { x: number; y: number; t: number; pressure?: number }
+): void;
+export declare function penRecordingDuration(recording: PenRecording): number;
+export declare function penRecordingSegments(
+  recording: PenRecording
+): { from: PenSample; to: PenSample; t: number; width: number }[];
+/** Draws the recording as dark ink on a transparent RGBA raster. */
+export declare function rasterizePenRecording(
+  recording: PenRecording,
+  options?: { until?: number }
+): { width: number; height: number; pixels: Uint8ClampedArray };
+/** The recording as indented Links Notation (`x y t pressure` samples). */
+export declare function penRecordingToLinksNotation(
+  recording: PenRecording
+): string;
+export declare function isPenRecordingText(text: string): boolean;
+/** Reads a recording saved as JSON or Links Notation. */
+export declare function parsePenRecording(text: string): PenRecording;
